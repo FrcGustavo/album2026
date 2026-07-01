@@ -85,12 +85,14 @@ export function App() {
     <main className="app-shell">
       <header className="app-header">
         <div>
-          <p className="eyebrow">Album Panini Mundial 2026 - Mexico</p>
-          <h1>Control total de figuritas</h1>
-          <p className="header-copy">Progreso, repetidas, intercambios, costos y respaldos guardados en tu cuenta.</p>
-          <p className={`sync-pill ${syncStatus}`}>{syncLabel(syncStatus, user)}</p>
+          <div className="hero-title-block">
+            <p className="eyebrow">Album Panini Mundial 2026 - Mexico</p>
+          </div>
+          <div className="hero-status-block">
+            <p className={`sync-pill ${syncStatus}`}>{syncLabel(syncStatus, user)}</p>
+          </div>
         </div>
-        <div className="progress-ring" aria-label={`Progreso ${albumStats.percent}%`}>
+        <div className="progress-ring" style={{ '--progress': `${albumStats.percent}%` }} aria-label={`Progreso ${albumStats.percent}%`}>
           <span>{pct(albumStats.percent)}</span>
           <small>{albumStats.owned}/{albumStats.activeTotal}</small>
         </div>
@@ -134,8 +136,8 @@ function syncLabel(status, user) {
   if (!user) return 'Sin sesion';
   if (status === 'synced') return `Sincronizado: ${user.name}`;
   if (status === 'saving') return `Guardando: ${user.name}`;
-  if (status === 'loading') return 'Cargando desde backend';
-  if (status === 'error') return 'Error de backend';
+  if (status === 'loading') return 'Cargando tu album';
+  if (status === 'error') return 'No se pudo sincronizar';
   return 'Sin sesion';
 }
 
@@ -155,9 +157,9 @@ function AuthScreen({ onAuthenticate, syncStatus, notice }) {
   return (
     <section className="auth-layout">
       <div className="auth-hero">
-        <p className="eyebrow">Album Panini Mundial 2026 - Mexico</p>
-        <h1>Tu album vive en el backend</h1>
-        <p className="header-copy">Inicia sesion para guardar progreso, compras, cracks y respaldos directamente en la base de datos.</p>
+        <div className="hero-title-block">
+          <p className="eyebrow">Album Panini Mundial 2026 - Mexico</p>
+        </div>
       </div>
       <Card className="auth-card">
         <CardHeader>

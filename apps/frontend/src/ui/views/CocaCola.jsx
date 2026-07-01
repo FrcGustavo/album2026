@@ -3,9 +3,15 @@ import { catalog } from '../../domain/catalog.js';
 import { EmptyState } from '../components/Layout.jsx';
 import { ProgressHero } from '../components/Progress.jsx';
 import { StickerTile } from '../components/StickerTile.jsx';
-import { Switch } from '@/components/ui/switch';
 
 export function CocaCola({ state, patch, albumStats }) {
+  function toggleCocaCola() {
+    patch(
+      (current) => ({ ...current, cocaColaEnabled: !current.cocaColaEnabled }),
+      state.cocaColaEnabled ? 'Coca-Cola desactivada.' : 'Coca-Cola activada.'
+    );
+  }
+
   return (
     <section className="view-stack">
       <article className="switch-panel">
@@ -13,11 +19,19 @@ export function CocaCola({ state, patch, albumStats }) {
           <h2>Coca-Cola</h2>
           <p>Seccion opcional. Si la activas, suma {catalog.addons.cocaCola.stickers.length} figuritas al total del album.</p>
         </div>
-        <Switch
-          checked={state.cocaColaEnabled}
-          onCheckedChange={(checked) => patch((current) => ({ ...current, cocaColaEnabled: checked }), checked ? 'Coca-Cola activada.' : 'Coca-Cola desactivada.')}
-          aria-label="Activar seccion Coca-Cola"
-        />
+        <div className="coca-toggle">
+          <span className={`coca-toggle-status ${state.cocaColaEnabled ? 'active' : 'inactive'}`}>{state.cocaColaEnabled ? 'Activada' : 'Desactivada'}</span>
+          <button
+            type="button"
+            className={`coca-switch ${state.cocaColaEnabled ? 'active' : 'inactive'}`}
+            role="switch"
+            aria-checked={state.cocaColaEnabled}
+            aria-label="Activar seccion Coca-Cola"
+            onClick={toggleCocaCola}
+          >
+            <span className="coca-switch-thumb" aria-hidden="true" />
+          </button>
+        </div>
       </article>
       <ProgressHero title="Progreso Coca-Cola" summary={albumStats.cocaCola} helper={state.cocaColaEnabled ? 'Activa' : 'Desactivada'} />
       {state.cocaColaEnabled ? (

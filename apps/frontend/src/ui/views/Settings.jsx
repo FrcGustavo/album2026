@@ -55,13 +55,13 @@ export function Settings({ state, update, user, syncStatus, logout }) {
       <Card className="settings-card">
         <CardHeader>
           <CardTitle>Cuenta y respaldos</CardTitle>
-          <CardDescription>{user ? `Usuario actual: ${user.name} (${user.email}). Estado: ${syncLabel(syncStatus)}.` : 'Inicia sesion para cargar tu album.'}</CardDescription>
+          <CardDescription>{user ? `${user.name} (${user.email}). Estado: ${syncLabel(syncStatus)}.` : 'Inicia sesion para cargar tu album.'}</CardDescription>
         </CardHeader>
         <CardContent className="settings-content">
-          <section className="settings-section">
+          <section className="settings-section settings-account-section">
             <div className="settings-section-heading">
-              <h3>Sesion</h3>
-              <p>El album se guarda exclusivamente en la base de datos del backend.</p>
+              <h3>Cuenta</h3>
+              <p>Tus cambios se guardan en tu cuenta y se recuperan al volver a entrar.</p>
             </div>
             <div className="settings-form-actions">
               <Button type="button" variant="outline" onClick={logout}>
@@ -112,6 +112,6 @@ function syncLabel(status) {
   if (status === 'synced') return 'sincronizado';
   if (status === 'saving') return 'guardando';
   if (status === 'loading') return 'cargando';
-  if (status === 'error') return 'error de backend';
+  if (status === 'error') return 'sin sincronizar';
   return 'sin sesion';
 }
