@@ -1,6 +1,6 @@
 # Panini Mundial 2026 MX
 
-Aplicacion React para registrar el avance personal del album Panini de la Copa Mundial FIFA 2026, con conteo de calcomanias pegadas, repetidas, faltantes, especiales, estrellas y Coca-Cola.
+Aplicacion React + FastAPI para registrar el avance personal del album Panini de la Copa Mundial FIFA 2026, con conteo de calcomanias pegadas, repetidas, faltantes, especiales, estrellas y Coca-Cola. El album se guarda en el backend con autenticacion JWT.
 
 ## Investigacion base
 
@@ -11,7 +11,7 @@ Aplicacion React para registrar el avance personal del album Panini de la Copa M
 
 ## Plan de implementacion
 
-1. Crear MVP frontend con React y persistencia local.
+1. Crear MVP frontend con React.
 2. Modelar el album como catalogo versionable de 980 espacios.
 3. Permitir captura rapida de una o muchas calcomanias por numero.
 4. Contar copias para distinguir pegadas y repetidas.
@@ -23,7 +23,12 @@ Aplicacion React para registrar el avance personal del album Panini de la Copa M
 
 ```bash
 pnpm install
-pnpm dev
+cd apps/backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[test]"
+cd ../..
+pnpm dev:all
 ```
 
 El monorepo separa las apps en:
@@ -39,22 +44,43 @@ Scripts desde la raiz:
 - `pnpm build`: build del frontend.
 - `pnpm test:api`: tests del backend.
 
+Variables del backend:
+
+- `PANINI_ENV`: default `development`. En `production` exige un secreto JWT explicito.
+- `PANINI_DATABASE_URL`: default `sqlite:///./data/panini.sqlite`.
+- `PANINI_JWT_SECRET_KEY`: secreto para firmar tokens; obligatorio en `production`.
+- `PANINI_JWT_ALGORITHM`: default `HS256`.
+- `PANINI_ACCESS_TOKEN_EXPIRE_MINUTES`: default `1440`.
+
+## API y autenticacion
+
+La API vive en `http://127.0.0.1:8000/api` y la documentacion Swagger en `http://127.0.0.1:8000/docs`.
+
+Flujo principal:
+
+1. `POST /api/auth/register` crea cuenta con `email`, `name` y `password`.
+2. `POST /api/auth/login` devuelve `access_token`.
+3. El frontend envia `Authorization: Bearer <token>`.
+4. El album se lee y guarda con rutas `/api/me/album`.
+
+No hay guardado local del album: si el backend no esta disponible, la app muestra error y no persiste cambios en el navegador.
+
 ## Arquitectura
 
 El frontend esta organizado con una arquitectura hexagonal ligera:
 
 - `apps/frontend/src/domain`: catalogo, estado del album y reglas puras de negocio.
-- `apps/frontend/src/application`: casos de uso que coordinan operaciones del album.
-- `apps/frontend/src/infrastructure`: adaptadores externos, persistencia local y API remota.
+- `apps/frontend/src/application`: casos de uso y hooks que coordinan sesion, carga y guardado remoto.
+- `apps/frontend/src/infrastructure`: adaptadores externos y API remota.
 - `apps/frontend/src/ui`: adaptador de entrada React, con `views` para pantallas y `components` para piezas reutilizables.
 - `apps/frontend/src/main.jsx`: bootstrap de React.
 
 El backend replica la separacion hexagonal:
 
 - `apps/backend/app/domain`: reglas puras, catalogo, estado y estadisticas.
-- `apps/backend/app/application`: servicios/casos de uso.
-- `apps/backend/app/infrastructure`: SQLite, SQLAlchemy y repositorios.
-- `apps/backend/app/interfaces/http`: routers y schemas FastAPI.
+- `apps/backend/app/application`: servicios/casos de uso y puertos como hashing y tokens.
+- `apps/backend/app/infrastructure`: SQLite, SQLAlchemy, repositorios, hashing y JWT concretos.
+- `apps/backend/app/interfaces/http`: routers, schemas FastAPI y wiring de dependencias.
 
 Esta separacion permite reemplazar el checklist, persistir en otro backend o agregar tests de reglas sin tocar los componentes.
 
