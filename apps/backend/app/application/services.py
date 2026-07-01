@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from datetime import datetime
 from typing import Protocol
 
+from app.application.security import PasswordHasher, TokenService
 from app.domain.album import (
     add_custom_crack,
     add_purchase,
@@ -15,9 +18,29 @@ from app.domain.album import (
 )
 
 
+@dataclass(frozen=True)
+class User:
+    id: int
+    email: str | None
+    name: str
+    created_at: datetime
+    updated_at: datetime
+
+
+@dataclass(frozen=True)
+class UserAuthRecord:
+    id: int
+    email: str
+    name: str
+    password_hash: str | None
+    created_at: datetime
+    updated_at: datetime
+
+
 class UserRepository(Protocol):
-    def get(self, user_id: int): ...
-    def get_or_create_by_name(self, name: str): ...
+    def get(self, user_id: int) -> User | None: ...
+    def get_auth_by_email(self, email: str) -> UserAuthRecord | None: ...
+    def create(self, email: str, name: str, password_hash: str) -> User: ...
 
 
 class AlbumRepository(Protocol):
@@ -26,17 +49,34 @@ class AlbumRepository(Protocol):
 
 
 class UserService:
-    def __init__(self, users: UserRepository):
+    def __init__(self, users: UserRepository, password_hasher: PasswordHasher, token_service: TokenService):
         self.users = users
+        self.password_hasher = password_hasher
+        self.token_service = token_service
 
-    def get_user(self, user_id: int):
+    def get_user(self, user_id: int) -> User | None:
         return self.users.get(user_id)
 
-    def get_or_create_user(self, name: str):
+    def register(self, email: str, name: str, password: str):
+        normalized_email = email.strip().lower()
         normalized = " ".join(name.strip().split())
+        if "@" not in normalized_email or "." not in normalized_email.rsplit("@", 1)[-1]:
+            raise ValueError("Email invalido")
         if not normalized:
             raise ValueError("El nombre es obligatorio")
-        return self.users.get_or_create_by_name(normalized)
+        if len(password) < 8:
+            raise ValueError("La contrasena debe tener al menos 8 caracteres")
+        if self.users.get_auth_by_email(normalized_email) is not None:
+            raise LookupError("El email ya esta registrado")
+        user = self.users.create(normalized_email, normalized, self.password_hasher.hash(password))
+        return {"access_token": self.token_service.create_access_token(str(user.id)), "token_type": "bearer", "user": user}
+
+    def login(self, email: str, password: str):
+        auth_record = self.users.get_auth_by_email(email.strip().lower())
+        if auth_record is None or not self.password_hasher.verify(password, auth_record.password_hash):
+            raise PermissionError("Credenciales invalidas")
+        user = self.users.get(auth_record.id)
+        return {"access_token": self.token_service.create_access_token(str(user.id)), "token_type": "bearer", "user": user}
 
 
 class AlbumService:

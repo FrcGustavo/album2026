@@ -6,17 +6,31 @@ from typing import Any, Literal, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class UserCreate(BaseModel):
+class RegisterRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=320, examples=["gus@example.com"])
     name: str = Field(min_length=1, max_length=160)
+    password: str = Field(min_length=8, max_length=128)
+
+
+class LoginRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=320, examples=["gus@example.com"])
+    password: str = Field(min_length=8, max_length=128)
 
 
 class UserOut(BaseModel):
     id: int
+    email: str
     name: str
     created_at: datetime
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: Literal["bearer"] = "bearer"
+    user: UserOut
 
 
 class AlbumState(BaseModel):

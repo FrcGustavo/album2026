@@ -1,26 +1,34 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
-from datetime import datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.application.services import User, UserAuthRecord
 from app.domain.album import empty_state, sanitize_state
 from app.infrastructure.database import AlbumStateModel, UserModel
 
 
-@dataclass(frozen=True)
-class User:
-    id: int
-    name: str
-    created_at: datetime
-    updated_at: datetime
-
-
 def to_user(model: UserModel) -> User:
-    return User(id=model.id, name=model.name, created_at=model.created_at, updated_at=model.updated_at)
+    return User(
+        id=model.id,
+        email=model.email,
+        name=model.name,
+        created_at=model.created_at,
+        updated_at=model.updated_at,
+    )
+
+
+def to_auth_record(model: UserModel) -> UserAuthRecord:
+    return UserAuthRecord(
+        id=model.id,
+        email=model.email or "",
+        name=model.name,
+        password_hash=model.password_hash,
+        created_at=model.created_at,
+        updated_at=model.updated_at,
+    )
 
 
 class SqlAlchemyUserRepository:
@@ -31,13 +39,15 @@ class SqlAlchemyUserRepository:
         model = self.session.get(UserModel, user_id)
         return to_user(model) if model else None
 
-    def get_or_create_by_name(self, name: str) -> User:
-        model = self.session.scalar(select(UserModel).where(func.lower(UserModel.name) == name.lower()))
-        if model is None:
-            model = UserModel(name=name)
-            self.session.add(model)
-            self.session.commit()
-            self.session.refresh(model)
+    def get_auth_by_email(self, email: str) -> UserAuthRecord | None:
+        model = self.session.scalar(select(UserModel).where(func.lower(UserModel.email) == email.lower()))
+        return to_auth_record(model) if model else None
+
+    def create(self, email: str, name: str, password_hash: str) -> User:
+        model = UserModel(email=email, name=name, password_hash=password_hash)
+        self.session.add(model)
+        self.session.commit()
+        self.session.refresh(model)
         return to_user(model)
 
 
