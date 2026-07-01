@@ -5,20 +5,13 @@
   "description": "Registro personal para el album Panini del Mundial 2026 en Mexico.",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:api": "cd backend && python3 -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000",
+    "dev": "pnpm --dir apps/frontend dev",
+    "dev:api": "cd apps/backend && python3 -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000",
     "dev:all": "sh -c 'pnpm run dev:api & pnpm run dev; wait'",
-    "build": "vite build",
-    "test:api": "cd backend && pytest",
-    "preview": "vite preview",
-    "lint": "eslint ."
-  },
-  "dependencies": {
-    "@vitejs/plugin-react": "^5.0.0",
-    "vite": "^7.0.0",
-    "typescript": "^5.5.4",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "build": "pnpm --dir apps/frontend build",
+    "test:api": "cd apps/backend && pytest",
+    "preview": "pnpm --dir apps/frontend preview",
+    "lint": "pnpm --dir apps/frontend lint"
   },
   "devDependencies": {},
   "packageManager": "pnpm@11.8.0",

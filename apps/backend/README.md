@@ -5,7 +5,7 @@ Backend FastAPI para sincronizar albumes por usuario usando SQLite local.
 ## Desarrollo
 
 ```bash
-cd backend
+cd apps/backend
 python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[test]"

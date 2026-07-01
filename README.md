@@ -26,15 +26,35 @@ pnpm install
 pnpm dev
 ```
 
+El monorepo separa las apps en:
+
+- `apps/frontend`: app React + Vite.
+- `apps/backend`: API FastAPI + SQLite.
+
+Scripts desde la raiz:
+
+- `pnpm dev`: frontend.
+- `pnpm dev:api`: backend en `127.0.0.1:8000`.
+- `pnpm dev:all`: frontend y backend.
+- `pnpm build`: build del frontend.
+- `pnpm test:api`: tests del backend.
+
 ## Arquitectura
 
-La app esta organizada con una arquitectura hexagonal ligera:
+El frontend esta organizado con una arquitectura hexagonal ligera:
 
-- `src/domain`: catalogo, estado del album y reglas puras de negocio.
-- `src/application`: casos de uso que coordinan operaciones del album.
-- `src/infrastructure`: adaptadores externos, por ahora persistencia en `localStorage`.
-- `src/ui`: adaptador de entrada React, con `views` para pantallas y `components` para piezas reutilizables.
-- `src/main.jsx`: bootstrap de React.
+- `apps/frontend/src/domain`: catalogo, estado del album y reglas puras de negocio.
+- `apps/frontend/src/application`: casos de uso que coordinan operaciones del album.
+- `apps/frontend/src/infrastructure`: adaptadores externos, persistencia local y API remota.
+- `apps/frontend/src/ui`: adaptador de entrada React, con `views` para pantallas y `components` para piezas reutilizables.
+- `apps/frontend/src/main.jsx`: bootstrap de React.
+
+El backend replica la separacion hexagonal:
+
+- `apps/backend/app/domain`: reglas puras, catalogo, estado y estadisticas.
+- `apps/backend/app/application`: servicios/casos de uso.
+- `apps/backend/app/infrastructure`: SQLite, SQLAlchemy y repositorios.
+- `apps/backend/app/interfaces/http`: routers y schemas FastAPI.
 
 Esta separacion permite reemplazar el checklist, persistir en otro backend o agregar tests de reglas sin tocar los componentes.
 
