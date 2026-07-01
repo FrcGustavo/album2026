@@ -1,26 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Download, Upload, UserRound, RotateCcw } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Download, Upload, LogOut, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { emptyState, sanitizeState } from '../../domain/albumState.js';
 import { catalog } from '../../domain/catalog.js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 
-export function Settings({ state, update, user, syncStatus, connectUser, disconnectUser }) {
+export function Settings({ state, update, user, syncStatus, logout }) {
   const inputRef = useRef(null);
   const [message, setMessage] = useState('');
-  const [name, setName] = useState(user?.name || '');
-
-  useEffect(() => {
-    setName(user?.name || '');
-  }, [user]);
-
-  function submitUser(event) {
-    event.preventDefault();
-    if (!name.trim()) return;
-    connectUser(name.trim());
-  }
 
   function exportJson() {
     const payload = JSON.stringify({ app: 'panini-world-cup-2026-mx', version: 2, exportedAt: new Date().toISOString(), state }, null, 2);
@@ -67,27 +55,20 @@ export function Settings({ state, update, user, syncStatus, connectUser, disconn
       <Card className="settings-card">
         <CardHeader>
           <CardTitle>Cuenta y respaldos</CardTitle>
-          <CardDescription>{user ? `Usuario actual: ${user.name}. ${syncStatus === 'offline' ? 'Modo local, no sincronizado.' : 'Sincronizacion activa.'}` : 'Sin usuario remoto. Tus datos viven en este navegador.'}</CardDescription>
+          <CardDescription>{user ? `Usuario actual: ${user.name} (${user.email}). Estado: ${syncLabel(syncStatus)}.` : 'Inicia sesion para cargar tu album.'}</CardDescription>
         </CardHeader>
         <CardContent className="settings-content">
           <section className="settings-section">
             <div className="settings-section-heading">
-              <h3>Sincronizacion</h3>
-              <p>{user ? 'Cambia de usuario remoto o vuelve al modo local cuando quieras.' : 'Activa respaldo remoto usando un nombre facil de recordar.'}</p>
+              <h3>Sesion</h3>
+              <p>El album se guarda exclusivamente en la base de datos del backend.</p>
             </div>
-            <form className="settings-user-form" onSubmit={submitUser}>
-              <label className="settings-field">
-                <span>Nombre de usuario</span>
-                <Input value={name} placeholder="Ej. Gustavo" onChange={(event) => setName(event.target.value)} />
-              </label>
-              <div className="settings-form-actions">
-                <Button type="submit">
-                  <UserRound aria-hidden="true" />
-                  {user ? 'Cambiar usuario' : 'Sincronizar'}
-                </Button>
-                {user && <Button type="button" variant="outline" onClick={disconnectUser}>Usar solo local</Button>}
-              </div>
-            </form>
+            <div className="settings-form-actions">
+              <Button type="button" variant="outline" onClick={logout}>
+                <LogOut aria-hidden="true" />
+                Cerrar sesion
+              </Button>
+            </div>
           </section>
 
           <section className="settings-section">
@@ -125,4 +106,12 @@ export function Settings({ state, update, user, syncStatus, connectUser, disconn
       </Card>
     </section>
   );
+}
+
+function syncLabel(status) {
+  if (status === 'synced') return 'sincronizado';
+  if (status === 'saving') return 'guardando';
+  if (status === 'loading') return 'cargando';
+  if (status === 'error') return 'error de backend';
+  return 'sin sesion';
 }

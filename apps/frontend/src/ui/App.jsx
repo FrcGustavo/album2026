@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { useAuthSession } from '../application/useAuthSession.js';
+import { useRemoteAlbumState } from '../application/useRemoteAlbumState.js';
 import { getAlbumStats, getCostStats, getCountryStats } from '../domain/albumState.js';
-import { createLocalAlbumRepository } from '../infrastructure/localAlbumRepository.js';
-import { createRemoteAlbumRepository } from '../infrastructure/remoteAlbumRepository.js';
 import { pct } from './formatters.js';
 import { FullAlbum } from './views/Album.jsx';
 import { CocaCola } from './views/CocaCola.jsx';
@@ -15,11 +15,10 @@ import { Specials } from './views/Specials.jsx';
 import { Stats } from './views/Stats.jsx';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Toaster } from '@/components/ui/sonner';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
-const albumRepository = createLocalAlbumRepository();
-const remoteAlbumRepository = createRemoteAlbumRepository();
-const USER_ID_KEY = 'panini-world-cup-2026-mx-user-id';
-const USER_NAME_KEY = 'panini-world-cup-2026-mx-user-name';
 const ROUTE_TABS = [
   ['inicio', '/', 'Inicio'],
   ['paises', '/paises', 'Paises'],
@@ -33,103 +32,20 @@ const ROUTE_TABS = [
 ];
 
 export function App() {
-  const [state, setState] = useState(() => albumRepository.load());
-  const [notice, setNotice] = useState('MVP local-first: el catalogo es editable y se podra reemplazar con el checklist oficial.');
-  const [user, setUser] = useState(() => {
-    const id = Number(localStorage.getItem(USER_ID_KEY));
-    const name = localStorage.getItem(USER_NAME_KEY) || '';
-    return id && name ? { id, name } : null;
-  });
-  const [syncStatus, setSyncStatus] = useState(user ? 'syncing' : 'local');
-  const hydratedRemote = useRef(false);
-  const saveTimer = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const auth = useAuthSession();
+  const album = useRemoteAlbumState(auth);
+  const { token, user, notice, setNotice, authenticate, remoteAlbumRepository } = auth;
+  const { state, patch, update, syncStatus, resetLocalState } = album;
 
   const albumStats = useMemo(() => getAlbumStats(state), [state]);
   const countryStats = useMemo(() => getCountryStats(state), [state]);
   const costStats = useMemo(() => getCostStats(state, albumStats), [state, albumStats]);
 
-  useEffect(() => {
-    if (!user) {
-      hydratedRemote.current = false;
-      setSyncStatus('local');
-      return;
-    }
-    let cancelled = false;
-    setSyncStatus('syncing');
-    remoteAlbumRepository
-      .loadAlbum(user.id)
-      .then((remoteState) => {
-        if (cancelled) return;
-        hydratedRemote.current = true;
-        setState(remoteState);
-        albumRepository.save(remoteState);
-        setSyncStatus('synced');
-        setNotice(`Album sincronizado para ${user.name}.`);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        hydratedRemote.current = true;
-        setSyncStatus('offline');
-        setNotice('Modo local, no sincronizado.');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
-
-  useEffect(() => {
-    if (!user || !hydratedRemote.current) return undefined;
-    setSyncStatus('syncing');
-    clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      remoteAlbumRepository
-        .saveAlbum(user.id, state)
-        .then(() => setSyncStatus('synced'))
-        .catch(() => {
-          setSyncStatus('offline');
-          setNotice('Modo local, no sincronizado.');
-        });
-    }, 500);
-    return () => clearTimeout(saveTimer.current);
-  }, [state, user]);
-
-  async function connectUser(name) {
-    setSyncStatus('syncing');
-    try {
-      const nextUser = await remoteAlbumRepository.createOrGetUser(name);
-      localStorage.setItem(USER_ID_KEY, String(nextUser.id));
-      localStorage.setItem(USER_NAME_KEY, nextUser.name);
-      hydratedRemote.current = false;
-      setUser(nextUser);
-      setNotice(`Usuario activo: ${nextUser.name}.`);
-    } catch {
-      setSyncStatus('offline');
-      setNotice('Modo local, no sincronizado.');
-    }
-  }
-
-  function disconnectUser() {
-    localStorage.removeItem(USER_ID_KEY);
-    localStorage.removeItem(USER_NAME_KEY);
-    setUser(null);
-    setNotice('Modo local activado.');
-  }
-
-  function update(nextState, nextNotice) {
-    setState(nextState);
-    albumRepository.save(nextState);
-    if (nextNotice) setNotice(nextNotice);
-  }
-
-  function patch(updater, nextNotice) {
-    setState((current) => {
-      const nextState = updater(current);
-      albumRepository.save(nextState);
-      return nextState;
-    });
-    if (nextNotice) setNotice(nextNotice);
+  function logout() {
+    auth.logout();
+    resetLocalState();
   }
 
   const context = {
@@ -143,8 +59,8 @@ export function App() {
     costStats,
     user,
     syncStatus,
-    connectUser,
-    disconnectUser
+    logout,
+    remoteAlbumRepository
   };
 
   const activeTab = ROUTE_TABS.find(([, path]) => path === location.pathname)?.[0] || 'inicio';
@@ -156,13 +72,22 @@ export function App() {
     if (nextPath && nextPath !== '/') navigate(nextPath, { replace: true });
   }, [location.hash, location.pathname, navigate]);
 
+  if (!token || !user) {
+    return (
+      <main className="app-shell auth-shell">
+        <AuthScreen onAuthenticate={authenticate} syncStatus={auth.authStatus} notice={notice} />
+        <Toaster />
+      </main>
+    );
+  }
+
   return (
     <main className="app-shell">
       <header className="app-header">
         <div>
           <p className="eyebrow">Album Panini Mundial 2026 - Mexico</p>
           <h1>Control total de figuritas</h1>
-          <p className="header-copy">Progreso, repetidas, intercambios, costos y respaldos en una app local-first.</p>
+          <p className="header-copy">Progreso, repetidas, intercambios, costos y respaldos guardados en tu cuenta.</p>
           <p className={`sync-pill ${syncStatus}`}>{syncLabel(syncStatus, user)}</p>
         </div>
         <div className="progress-ring" aria-label={`Progreso ${albumStats.percent}%`}>
@@ -206,9 +131,69 @@ export function App() {
 }
 
 function syncLabel(status, user) {
-  if (!user) return 'Modo local';
+  if (!user) return 'Sin sesion';
   if (status === 'synced') return `Sincronizado: ${user.name}`;
-  if (status === 'syncing') return `Sincronizando: ${user.name}`;
-  if (status === 'offline') return 'Modo local, no sincronizado';
-  return 'Modo local';
+  if (status === 'saving') return `Guardando: ${user.name}`;
+  if (status === 'loading') return 'Cargando desde backend';
+  if (status === 'error') return 'Error de backend';
+  return 'Sin sesion';
+}
+
+function AuthScreen({ onAuthenticate, syncStatus, notice }) {
+  const [mode, setMode] = useState('register');
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
+  const isRegister = mode === 'register';
+  const disabled = syncStatus === 'loading';
+
+  function submit(event) {
+    event.preventDefault();
+    onAuthenticate(mode, { email: email.trim(), name: name.trim(), password });
+  }
+
+  return (
+    <section className="auth-layout">
+      <div className="auth-hero">
+        <p className="eyebrow">Album Panini Mundial 2026 - Mexico</p>
+        <h1>Tu album vive en el backend</h1>
+        <p className="header-copy">Inicia sesion para guardar progreso, compras, cracks y respaldos directamente en la base de datos.</p>
+      </div>
+      <Card className="auth-card">
+        <CardHeader>
+          <CardTitle>{isRegister ? 'Crear cuenta' : 'Iniciar sesion'}</CardTitle>
+          <CardDescription>
+            {notice.endsWith('.') ? notice : `${notice}.`}
+            {!isRegister && ' Si aun no tienes cuenta, primero crea una.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form className="auth-form" onSubmit={submit}>
+            <label className="settings-field">
+              <span>Email</span>
+              <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+            </label>
+            {isRegister && (
+              <label className="settings-field">
+                <span>Nombre</span>
+                <Input value={name} onChange={(event) => setName(event.target.value)} required />
+              </label>
+            )}
+            <label className="settings-field">
+              <span>Contrasena</span>
+              <Input type="password" minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} required />
+            </label>
+            <div className="auth-actions">
+              <Button type="submit" disabled={disabled}>
+                {disabled ? 'Conectando...' : isRegister ? 'Crear cuenta' : 'Entrar'}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setMode(isRegister ? 'login' : 'register')}>
+                {isRegister ? 'Ya tengo cuenta' : 'Crear cuenta'}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </section>
+  );
 }
