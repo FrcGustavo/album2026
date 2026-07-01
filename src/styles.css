@@ -117,6 +117,31 @@ h2 {
   font-size: 1.05rem;
 }
 
+.sync-pill {
+  display: inline-flex;
+  width: fit-content;
+  margin: 0.8rem 0 0;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.88);
+  background: rgba(10, 19, 18, 0.34);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.sync-pill.synced {
+  border-color: rgba(76, 214, 160, 0.52);
+}
+
+.sync-pill.syncing {
+  border-color: rgba(247, 201, 72, 0.62);
+}
+
+.sync-pill.offline {
+  border-color: rgba(255, 154, 154, 0.62);
+}
+
 .progress-ring {
   width: 152px;
   aspect-ratio: 1;

@@ -2,3 +2,7 @@ node_modules/
 dist/
 .pnpm-store/
 .DS_Store
+backend/data/
+backend/.venv/
+__pycache__/
+.pytest_cache/

@@ -1,10 +1,21 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { emptyState, sanitizeState } from '../../domain/albumState.js';
 import { catalog } from '../../domain/catalog.js';
 
-export function Settings({ state, update }) {
+export function Settings({ state, update, user, syncStatus, connectUser, disconnectUser }) {
   const inputRef = useRef(null);
   const [message, setMessage] = useState('');
+  const [name, setName] = useState(user?.name || '');
+
+  useEffect(() => {
+    setName(user?.name || '');
+  }, [user]);
+
+  function submitUser(event) {
+    event.preventDefault();
+    if (!name.trim()) return;
+    connectUser(name.trim());
+  }
 
   function exportJson() {
     const payload = JSON.stringify({ app: 'panini-world-cup-2026-mx', version: 2, exportedAt: new Date().toISOString(), state }, null, 2);
@@ -46,7 +57,12 @@ export function Settings({ state, update }) {
     <section className="view-stack narrow">
       <article className="settings-card">
         <h2>Cuenta y respaldos</h2>
-        <p>Esta version es local-first. Tus datos viven en este navegador hasta que exportes o importes un respaldo.</p>
+        <p>{user ? `Usuario actual: ${user.name}. ${syncStatus === 'offline' ? 'Modo local, no sincronizado.' : 'Sincronizacion activa.'}` : 'Sin usuario remoto. Tus datos viven en este navegador.'}</p>
+        <form className="inline-form" onSubmit={submitUser}>
+          <input value={name} placeholder="Tu nombre" onChange={(event) => setName(event.target.value)} />
+          <button type="submit">{user ? 'Cambiar usuario' : 'Sincronizar'}</button>
+          {user && <button type="button" className="secondary" onClick={disconnectUser}>Usar solo local</button>}
+        </form>
         <div className="settings-actions">
           <button type="button" onClick={exportJson}>Exportar JSON</button>
           <button type="button" className="secondary" onClick={() => inputRef.current?.click()}>Importar JSON</button>
