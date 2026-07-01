@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { CountryRow } from '../components/Country.jsx';
 import { Toolbar } from '../components/Layout.jsx';
 import { Stat } from '../components/Progress.jsx';

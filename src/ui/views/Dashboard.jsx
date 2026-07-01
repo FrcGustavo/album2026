@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { addEntryToAlbum } from '../../application/albumUseCases.js';
 import { money } from '../formatters.js';
 import { Ranking } from '../components/Country.jsx';

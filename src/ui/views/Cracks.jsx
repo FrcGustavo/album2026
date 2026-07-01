@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { copiesFor, getCracks } from '../../domain/albumState.js';
 import { catalog, stickerByCode, teamById } from '../../domain/catalog.js';
 import { Toolbar } from '../components/Layout.jsx';

@@ -1,3 +1,5 @@
+import React from 'react';
+
 export function Toolbar({ children }) {
   return <section className="toolbar">{children}</section>;
 }

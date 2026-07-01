@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { emptyState, sanitizeState } from '../../domain/albumState.js';
 import { catalog } from '../../domain/catalog.js';
 

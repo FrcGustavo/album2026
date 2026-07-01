@@ -1,3 +1,4 @@
+import React from 'react';
 import { catalog } from '../../domain/catalog.js';
 import { ProgressHero } from '../components/Progress.jsx';
 import { StickerTile } from '../components/StickerTile.jsx';

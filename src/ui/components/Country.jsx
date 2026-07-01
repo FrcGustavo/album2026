@@ -1,3 +1,4 @@
+import React from 'react';
 import { ProgressBar } from './Progress.jsx';
 
 export function CountryCard({ team }) {

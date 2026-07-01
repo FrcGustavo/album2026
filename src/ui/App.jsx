@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { getAlbumStats, getCostStats, getCountryStats } from '../domain/albumState.js';
 import { createLocalAlbumRepository } from '../infrastructure/localAlbumRepository.js';
 import { pct } from './formatters.js';

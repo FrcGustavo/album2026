@@ -1,3 +1,4 @@
+import React from 'react';
 import { pct } from '../formatters.js';
 
 export function ProgressHero({ title, summary, helper }) {

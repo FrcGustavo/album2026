@@ -1,3 +1,4 @@
+import React from 'react';
 import { catalog } from '../../domain/catalog.js';
 import { EmptyState } from '../components/Layout.jsx';
 import { ProgressHero } from '../components/Progress.jsx';

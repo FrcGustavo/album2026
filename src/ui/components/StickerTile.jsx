@@ -1,3 +1,4 @@
+import React from 'react';
 import { copiesFor, getCracks, setStickerCopies } from '../../domain/albumState.js';
 
 export function StickerTile({ sticker, state, patch }) {
