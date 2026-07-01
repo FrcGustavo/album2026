@@ -11,8 +11,10 @@ export function ProgressHero({ title, summary, helper }) {
         <h2>{title}</h2>
         <p>{helper}</p>
       </div>
-      <strong>{pct(summary.percent)}</strong>
-      <span>{summary.owned} obtenidas - {summary.repeated} repetidas - {summary.missing} faltantes</span>
+      <div className="progress-hero-summary">
+        <strong>{pct(summary.percent)}</strong>
+        <span>{summary.owned} obtenidas - {summary.repeated} repetidas - {summary.missing} faltantes</span>
+      </div>
     </article>
   );
 }

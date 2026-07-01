@@ -69,27 +69,46 @@ export function Settings({ state, update, user, syncStatus, connectUser, disconn
           <CardTitle>Cuenta y respaldos</CardTitle>
           <CardDescription>{user ? `Usuario actual: ${user.name}. ${syncStatus === 'offline' ? 'Modo local, no sincronizado.' : 'Sincronizacion activa.'}` : 'Sin usuario remoto. Tus datos viven en este navegador.'}</CardDescription>
         </CardHeader>
-        <CardContent>
-        <form className="inline-form" onSubmit={submitUser}>
-          <Input value={name} placeholder="Tu nombre" onChange={(event) => setName(event.target.value)} />
-          <Button type="submit">
-            <UserRound aria-hidden="true" />
-            {user ? 'Cambiar usuario' : 'Sincronizar'}
-          </Button>
-          {user && <Button type="button" variant="outline" onClick={disconnectUser}>Usar solo local</Button>}
-        </form>
-        <div className="settings-actions">
-          <Button type="button" onClick={exportJson}>
-            <Download aria-hidden="true" />
-            Exportar JSON
-          </Button>
-          <Button type="button" variant="outline" onClick={() => inputRef.current?.click()}>
-            <Upload aria-hidden="true" />
-            Importar JSON
-          </Button>
-          <input ref={inputRef} type="file" accept="application/json" onChange={importJson} hidden />
-        </div>
-        {message && <p className="notice">{message}</p>}
+        <CardContent className="settings-content">
+          <section className="settings-section">
+            <div className="settings-section-heading">
+              <h3>Sincronizacion</h3>
+              <p>{user ? 'Cambia de usuario remoto o vuelve al modo local cuando quieras.' : 'Activa respaldo remoto usando un nombre facil de recordar.'}</p>
+            </div>
+            <form className="settings-user-form" onSubmit={submitUser}>
+              <label className="settings-field">
+                <span>Nombre de usuario</span>
+                <Input value={name} placeholder="Ej. Gustavo" onChange={(event) => setName(event.target.value)} />
+              </label>
+              <div className="settings-form-actions">
+                <Button type="submit">
+                  <UserRound aria-hidden="true" />
+                  {user ? 'Cambiar usuario' : 'Sincronizar'}
+                </Button>
+                {user && <Button type="button" variant="outline" onClick={disconnectUser}>Usar solo local</Button>}
+              </div>
+            </form>
+          </section>
+
+          <section className="settings-section">
+            <div className="settings-section-heading">
+              <h3>Respaldo local</h3>
+              <p>Exporta una copia manual o importa un archivo JSON guardado antes.</p>
+            </div>
+            <div className="settings-actions">
+              <Button type="button" onClick={exportJson}>
+                <Download aria-hidden="true" />
+                Exportar JSON
+              </Button>
+              <Button type="button" variant="outline" onClick={() => inputRef.current?.click()}>
+                <Upload aria-hidden="true" />
+                Importar JSON
+              </Button>
+              <input ref={inputRef} type="file" accept="application/json" onChange={importJson} hidden />
+            </div>
+          </section>
+
+          {message && <p className="notice">{message}</p>}
         </CardContent>
       </Card>
       <Card className="settings-card danger-zone">
@@ -97,7 +116,7 @@ export function Settings({ state, update, user, syncStatus, connectUser, disconn
           <CardTitle>Zona peligrosa</CardTitle>
           <CardDescription>Se borraran las {catalog.baseTotal} figuritas base, Coca-Cola, cracks personalizados y compras.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="settings-danger-content">
           <Button type="button" variant="destructive" onClick={reset}>
             <RotateCcw aria-hidden="true" />
             Resetear album
