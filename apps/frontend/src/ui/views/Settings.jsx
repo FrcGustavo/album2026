@@ -1,6 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Download, Upload, UserRound, RotateCcw } from 'lucide-react';
+import { toast } from 'sonner';
 import { emptyState, sanitizeState } from '../../domain/albumState.js';
 import { catalog } from '../../domain/catalog.js';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
 export function Settings({ state, update, user, syncStatus, connectUser, disconnectUser }) {
   const inputRef = useRef(null);
@@ -27,6 +32,7 @@ export function Settings({ state, update, user, syncStatus, connectUser, disconn
     link.click();
     URL.revokeObjectURL(url);
     setMessage('Progreso exportado.');
+    toast.success('Progreso exportado');
   }
 
   function importJson(event) {
@@ -39,8 +45,10 @@ export function Settings({ state, update, user, syncStatus, connectUser, disconn
         const imported = sanitizeState(parsed.state || parsed);
         update(imported, 'Progreso importado.');
         setMessage('Progreso importado.');
+        toast.success('Progreso importado');
       } catch {
         setMessage('No pude importar ese JSON.');
+        toast.error('No pude importar ese JSON');
       }
     };
     reader.readAsText(file);
@@ -51,30 +59,51 @@ export function Settings({ state, update, user, syncStatus, connectUser, disconn
     if (!window.confirm('¿Resetear todo el album? Se borraran figuritas, cracks personalizados y compras.')) return;
     update(emptyState(), 'Album reiniciado.');
     setMessage('Album reiniciado.');
+    toast.success('Album reiniciado');
   }
 
   return (
     <section className="view-stack narrow">
-      <article className="settings-card">
-        <h2>Cuenta y respaldos</h2>
-        <p>{user ? `Usuario actual: ${user.name}. ${syncStatus === 'offline' ? 'Modo local, no sincronizado.' : 'Sincronizacion activa.'}` : 'Sin usuario remoto. Tus datos viven en este navegador.'}</p>
+      <Card className="settings-card">
+        <CardHeader>
+          <CardTitle>Cuenta y respaldos</CardTitle>
+          <CardDescription>{user ? `Usuario actual: ${user.name}. ${syncStatus === 'offline' ? 'Modo local, no sincronizado.' : 'Sincronizacion activa.'}` : 'Sin usuario remoto. Tus datos viven en este navegador.'}</CardDescription>
+        </CardHeader>
+        <CardContent>
         <form className="inline-form" onSubmit={submitUser}>
-          <input value={name} placeholder="Tu nombre" onChange={(event) => setName(event.target.value)} />
-          <button type="submit">{user ? 'Cambiar usuario' : 'Sincronizar'}</button>
-          {user && <button type="button" className="secondary" onClick={disconnectUser}>Usar solo local</button>}
+          <Input value={name} placeholder="Tu nombre" onChange={(event) => setName(event.target.value)} />
+          <Button type="submit">
+            <UserRound aria-hidden="true" />
+            {user ? 'Cambiar usuario' : 'Sincronizar'}
+          </Button>
+          {user && <Button type="button" variant="outline" onClick={disconnectUser}>Usar solo local</Button>}
         </form>
         <div className="settings-actions">
-          <button type="button" onClick={exportJson}>Exportar JSON</button>
-          <button type="button" className="secondary" onClick={() => inputRef.current?.click()}>Importar JSON</button>
+          <Button type="button" onClick={exportJson}>
+            <Download aria-hidden="true" />
+            Exportar JSON
+          </Button>
+          <Button type="button" variant="outline" onClick={() => inputRef.current?.click()}>
+            <Upload aria-hidden="true" />
+            Importar JSON
+          </Button>
           <input ref={inputRef} type="file" accept="application/json" onChange={importJson} hidden />
         </div>
         {message && <p className="notice">{message}</p>}
-      </article>
-      <article className="settings-card danger-zone">
-        <h2>Zona peligrosa</h2>
-        <p>Se borraran las {catalog.baseTotal} figuritas base, Coca-Cola, cracks personalizados y compras.</p>
-        <button type="button" className="danger" onClick={reset}>Resetear album</button>
-      </article>
+        </CardContent>
+      </Card>
+      <Card className="settings-card danger-zone">
+        <CardHeader>
+          <CardTitle>Zona peligrosa</CardTitle>
+          <CardDescription>Se borraran las {catalog.baseTotal} figuritas base, Coca-Cola, cracks personalizados y compras.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button type="button" variant="destructive" onClick={reset}>
+            <RotateCcw aria-hidden="true" />
+            Resetear album
+          </Button>
+        </CardContent>
+      </Card>
     </section>
   );
 }

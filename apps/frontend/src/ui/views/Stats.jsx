@@ -3,6 +3,9 @@ import { CountryRow } from '../components/Country.jsx';
 import { Toolbar } from '../components/Layout.jsx';
 import { Stat } from '../components/Progress.jsx';
 import { pct } from '../formatters.js';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function Stats({ albumStats, countryStats, costStats }) {
   const [query, setQuery] = useState('');
@@ -12,6 +15,8 @@ export function Stats({ albumStats, countryStats, costStats }) {
     .filter((team) => !normalized || team.name.toLowerCase().includes(normalized) || team.code.toLowerCase().includes(normalized))
     .filter((team) => filter === 'all' || (filter === 'completed' && team.complete) || (filter === 'missing' && team.missing > 0) || (filter === 'repeated' && team.hasRepeated))
     .sort((a, b) => b.percent - a.percent);
+  const leaders = [...countryStats].sort((a, b) => b.percent - a.percent).slice(0, 5);
+  const lagging = [...countryStats].sort((a, b) => a.percent - b.percent).slice(0, 5);
 
   return (
     <section className="view-stack">
@@ -23,14 +28,23 @@ export function Stats({ albumStats, countryStats, costStats }) {
         <Stat label="Promedio repetidas" value={albumStats.owned ? (albumStats.repeated / albumStats.owned).toFixed(2) : '0.00'} helper="por unica" />
         <Stat label="Eficiencia" value={pct(costStats.openingEfficiency)} helper="apertura estimada" />
       </div>
+      <div className="stats-top-grid">
+        <StatsTop title="Top 5 mas completos" description="Selecciones con mejor avance" teams={leaders} />
+        <StatsTop title="Top 5 mas atrasados" description="Prioridad para completar" teams={lagging} />
+      </div>
       <Toolbar>
-        <input value={query} placeholder="Buscar..." onChange={(event) => setQuery(event.target.value)} />
-        <select value={filter} onChange={(event) => setFilter(event.target.value)}>
-          <option value="all">Todos</option>
-          <option value="completed">Completos</option>
-          <option value="missing">Faltantes</option>
-          <option value="repeated">Repetidas</option>
-        </select>
+        <Input value={query} placeholder="Buscar..." onChange={(event) => setQuery(event.target.value)} />
+        <Select value={filter} onValueChange={setFilter}>
+          <SelectTrigger aria-label="Filtro de estadisticas">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="completed">Completos</SelectItem>
+            <SelectItem value="missing">Faltantes</SelectItem>
+            <SelectItem value="repeated">Repetidas</SelectItem>
+          </SelectContent>
+        </Select>
       </Toolbar>
       <div className="table-list">
         {countries.map((team) => (
@@ -38,5 +52,23 @@ export function Stats({ albumStats, countryStats, costStats }) {
         ))}
       </div>
     </section>
+  );
+}
+
+function StatsTop({ title, description, teams }) {
+  return (
+    <Card className="stats-top-card">
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="ranking-list">
+          {teams.map((team) => (
+            <CountryRow key={team.id} team={team} />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

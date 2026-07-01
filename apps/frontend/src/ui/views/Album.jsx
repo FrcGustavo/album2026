@@ -3,6 +3,7 @@ import { catalog, GROUPS } from '../../domain/catalog.js';
 import { getTeamStickers } from '../../domain/albumState.js';
 import { StickerTile } from '../components/StickerTile.jsx';
 import { Toolbar } from '../components/Layout.jsx';
+import { Input } from '@/components/ui/input';
 
 export function FullAlbum({ state, patch }) {
   const [query, setQuery] = useState('');
@@ -12,7 +13,7 @@ export function FullAlbum({ state, patch }) {
   return (
     <section className="view-stack">
       <Toolbar>
-        <input value={query} placeholder="Buscar seleccion..." onChange={(event) => setQuery(event.target.value)} />
+        <Input value={query} placeholder="Buscar seleccion..." onChange={(event) => setQuery(event.target.value)} />
       </Toolbar>
       {GROUPS.map((group) => {
         const groupTeams = teams.filter((team) => team.group === group);

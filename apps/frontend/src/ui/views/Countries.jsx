@@ -3,6 +3,8 @@ import { GROUPS } from '../../domain/catalog.js';
 import { getTeamStickers } from '../../domain/albumState.js';
 import { CountryCard } from '../components/Country.jsx';
 import { Toolbar } from '../components/Layout.jsx';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function Countries({ countryStats }) {
   const [query, setQuery] = useState('');
@@ -27,15 +29,20 @@ export function Countries({ countryStats }) {
   return (
     <section className="view-stack">
       <Toolbar>
-        <input value={query} placeholder="Buscar por pais, codigo o figurita" onChange={(event) => setQuery(event.target.value)} />
-        <select value={filter} onChange={(event) => setFilter(event.target.value)}>
-          <option value="all">Todas</option>
-          <option value="missing">Faltantes</option>
-          <option value="repeated">Repetidas</option>
-          <option value="completed">Completas</option>
-          <option value="shields">Sin escudo</option>
-          <option value="teams">Sin equipo</option>
-        </select>
+        <Input value={query} placeholder="Buscar por pais, codigo o figurita" onChange={(event) => setQuery(event.target.value)} />
+        <Select value={filter} onValueChange={setFilter}>
+          <SelectTrigger aria-label="Filtro de selecciones">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas</SelectItem>
+            <SelectItem value="missing">Faltantes</SelectItem>
+            <SelectItem value="repeated">Repetidas</SelectItem>
+            <SelectItem value="completed">Completas</SelectItem>
+            <SelectItem value="shields">Sin escudo</SelectItem>
+            <SelectItem value="teams">Sin equipo</SelectItem>
+          </SelectContent>
+        </Select>
       </Toolbar>
       {GROUPS.map((group) => {
         const teams = visible.filter((team) => team.group === group);
@@ -43,7 +50,7 @@ export function Countries({ countryStats }) {
         return (
           <section className="group-section" key={group}>
             <h2>Grupo {group}</h2>
-            <div className="country-grid">
+            <div className="country-grid countries-card-grid">
               {teams.map((team) => (
                 <CountryCard key={team.id} team={team} />
               ))}

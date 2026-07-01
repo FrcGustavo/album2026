@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { getAlbumStats, getCostStats, getCountryStats } from '../domain/albumState.js';
 import { createLocalAlbumRepository } from '../infrastructure/localAlbumRepository.js';
 import { createRemoteAlbumRepository } from '../infrastructure/remoteAlbumRepository.js';
@@ -12,15 +13,27 @@ import { Dashboard } from './views/Dashboard.jsx';
 import { Settings } from './views/Settings.jsx';
 import { Specials } from './views/Specials.jsx';
 import { Stats } from './views/Stats.jsx';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Toaster } from '@/components/ui/sonner';
 
 const albumRepository = createLocalAlbumRepository();
 const remoteAlbumRepository = createRemoteAlbumRepository();
 const USER_ID_KEY = 'panini-world-cup-2026-mx-user-id';
 const USER_NAME_KEY = 'panini-world-cup-2026-mx-user-name';
+const ROUTE_TABS = [
+  ['inicio', '/', 'Inicio'],
+  ['paises', '/paises', 'Paises'],
+  ['album', '/album', 'Album completo'],
+  ['especiales', '/especiales', 'Especiales'],
+  ['cracks', '/cracks', 'Cracks'],
+  ['coca-cola', '/coca-cola', 'Coca-Cola'],
+  ['costos', '/costos', 'Costos'],
+  ['estadisticas', '/estadisticas', 'Estadisticas'],
+  ['configuracion', '/configuracion', 'Configuracion']
+];
 
 export function App() {
   const [state, setState] = useState(() => albumRepository.load());
-  const [activeTab, setActiveTab] = useState(() => window.location.hash.replace('#', '') || 'inicio');
   const [notice, setNotice] = useState('MVP local-first: el catalogo es editable y se podra reemplazar con el checklist oficial.');
   const [user, setUser] = useState(() => {
     const id = Number(localStorage.getItem(USER_ID_KEY));
@@ -30,18 +43,12 @@ export function App() {
   const [syncStatus, setSyncStatus] = useState(user ? 'syncing' : 'local');
   const hydratedRemote = useRef(false);
   const saveTimer = useRef(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const albumStats = useMemo(() => getAlbumStats(state), [state]);
   const countryStats = useMemo(() => getCountryStats(state), [state]);
   const costStats = useMemo(() => getCostStats(state, albumStats), [state, albumStats]);
-
-  useEffect(() => {
-    function syncHash() {
-      setActiveTab(window.location.hash.replace('#', '') || 'inicio');
-    }
-    window.addEventListener('hashchange', syncHash);
-    return () => window.removeEventListener('hashchange', syncHash);
-  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -125,11 +132,6 @@ export function App() {
     if (nextNotice) setNotice(nextNotice);
   }
 
-  function setTab(tab) {
-    setActiveTab(tab);
-    window.location.hash = tab;
-  }
-
   const context = {
     state,
     patch,
@@ -144,6 +146,15 @@ export function App() {
     connectUser,
     disconnectUser
   };
+
+  const activeTab = ROUTE_TABS.find(([, path]) => path === location.pathname)?.[0] || 'inicio';
+
+  useEffect(() => {
+    if (location.pathname !== '/' || !location.hash) return;
+    const legacyTab = location.hash.replace('#', '');
+    const nextPath = ROUTE_TABS.find(([id]) => id === legacyTab)?.[1];
+    if (nextPath && nextPath !== '/') navigate(nextPath, { replace: true });
+  }, [location.hash, location.pathname, navigate]);
 
   return (
     <main className="app-shell">
@@ -160,33 +171,36 @@ export function App() {
         </div>
       </header>
 
-      <nav className="tabs" aria-label="Secciones">
-        {[
-          ['inicio', 'Inicio'],
-          ['paises', 'Paises'],
-          ['album', 'Album completo'],
-          ['especiales', 'Especiales'],
-          ['cracks', 'Cracks'],
-          ['coca-cola', 'Coca-Cola'],
-          ['costos', 'Costos'],
-          ['estadisticas', 'Estadisticas'],
-          ['configuracion', 'Configuracion']
-        ].map(([id, label]) => (
-          <button className={activeTab === id ? 'active' : ''} type="button" key={id} onClick={() => setTab(id)}>
-            {label}
-          </button>
-        ))}
-      </nav>
+      <Tabs
+        value={activeTab}
+        onValueChange={(tab) => {
+          const nextPath = ROUTE_TABS.find(([id]) => id === tab)?.[1] || '/';
+          navigate(nextPath);
+        }}
+        className="tabs-shell"
+      >
+        <TabsList className="tabs-list" aria-label="Secciones">
+          {ROUTE_TABS.map(([id, , label]) => (
+            <TabsTrigger value={id} key={id}>
+              {label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
-      {activeTab === 'inicio' && <Dashboard {...context} />}
-      {activeTab === 'paises' && <Countries {...context} />}
-      {activeTab === 'album' && <FullAlbum {...context} />}
-      {activeTab === 'especiales' && <Specials {...context} />}
-      {activeTab === 'cracks' && <Cracks {...context} />}
-      {activeTab === 'coca-cola' && <CocaCola {...context} />}
-      {activeTab === 'costos' && <Costs {...context} />}
-      {activeTab === 'estadisticas' && <Stats {...context} />}
-      {activeTab === 'configuracion' && <Settings {...context} />}
+      <Routes>
+        <Route path="/" element={<Dashboard {...context} />} />
+        <Route path="/paises" element={<Countries {...context} />} />
+        <Route path="/album" element={<FullAlbum {...context} />} />
+        <Route path="/especiales" element={<Specials {...context} />} />
+        <Route path="/cracks" element={<Cracks {...context} />} />
+        <Route path="/coca-cola" element={<CocaCola {...context} />} />
+        <Route path="/costos" element={<Costs {...context} />} />
+        <Route path="/estadisticas" element={<Stats {...context} />} />
+        <Route path="/configuracion" element={<Settings {...context} />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <Toaster />
     </main>
   );
 }

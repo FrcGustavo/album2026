@@ -1,24 +1,30 @@
 import React from 'react';
 import { ProgressBar } from './Progress.jsx';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export function CountryCard({ team }) {
   return (
-    <article className="country-card">
-      <div className="team-title">
-        <img src={team.flagUrl} alt="" />
-        <div>
-          <strong>{team.name}</strong>
-          <span>Grupo {team.group} - {team.code}</span>
+    <Card className="country-card">
+      <CardHeader>
+        <div className="team-title">
+          <img src={team.flagUrl} alt="" />
+          <div>
+            <CardTitle>{team.name}</CardTitle>
+            <span>Grupo {team.group} - {team.code}</span>
+          </div>
         </div>
-      </div>
-      <ProgressBar percent={team.percent} />
-      <div className="mini-stats">
-        <span>{team.owned}/{team.total}</span>
-        <span>{team.repeated} rep.</span>
-        {team.withoutShield && <span>sin escudo</span>}
-        {team.withoutTeamPhoto && <span>sin equipo</span>}
-      </div>
-    </article>
+      </CardHeader>
+      <CardContent>
+        <ProgressBar percent={team.percent} />
+        <div className="mini-stats">
+          <Badge variant="leaf">{team.owned}/{team.total}</Badge>
+          <Badge variant={team.repeated ? 'trophy' : 'secondary'}>{team.repeated} rep.</Badge>
+          {team.withoutShield && <Badge variant="outline">sin escudo</Badge>}
+          {team.withoutTeamPhoto && <Badge variant="outline">sin equipo</Badge>}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -37,13 +43,17 @@ export function CountryRow({ team }) {
 
 export function Ranking({ title, teams }) {
   return (
-    <article className="panel">
-      <h2>{title}</h2>
-      <div className="ranking-list">
-        {teams.map((team) => (
-          <CountryRow key={team.id} team={team} />
-        ))}
-      </div>
-    </article>
+    <Card className="panel">
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="ranking-list">
+          {teams.map((team) => (
+            <CountryRow key={team.id} team={team} />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
