@@ -2,11 +2,16 @@ import React, { useState } from 'react';
 import { copiesFor, getCracks } from '../../domain/albumState.js';
 import { catalog, stickerByCode, teamById } from '../../domain/catalog.js';
 import { Toolbar } from '../components/Layout.jsx';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Trash2 } from 'lucide-react';
 
 export function Cracks({ state, patch }) {
   const [query, setQuery] = useState('');
-  const [form, setForm] = useState({ player: '', teamId: catalog.teams[0].id, number: 10 });
+  const [form, setForm] = useState({ teamId: catalog.teams[0].id, stickerCode: `${catalog.teams[0].id}1` });
   const cracks = getCracks(state);
+  const teamStickers = catalog.stickers.filter((sticker) => sticker.teamId === form.teamId);
   const normalized = query.trim().toLowerCase();
   const visible = cracks.filter((crack) => {
     const team = teamById[crack.teamId];
@@ -15,40 +20,60 @@ export function Cracks({ state, patch }) {
 
   function addCrack(event) {
     event.preventDefault();
-    const number = Number(form.number);
-    const stickerCode = `${form.teamId}${number}`;
-    if (!form.player.trim() || number < 1 || number > 20 || !stickerByCode[stickerCode]) return;
-    if (cracks.some((crack) => crack.stickerCode === stickerCode)) return;
+    const sticker = stickerByCode[form.stickerCode];
+    if (!sticker || sticker.teamId !== form.teamId) return;
+    if (cracks.some((crack) => crack.stickerCode === sticker.code)) return;
     patch((current) => ({
       ...current,
       customCracks: [
         ...current.customCracks,
         {
           id: crypto.randomUUID(),
-          player: form.player.trim(),
+          player: sticker.title,
           teamId: form.teamId,
-          stickerCode,
+          stickerCode: sticker.code,
           official: false
         }
       ]
     }), 'Crack personalizado agregado.');
-    setForm({ player: '', teamId: form.teamId, number: 10 });
+  }
+
+  function selectTeam(teamId) {
+    setForm({ teamId, stickerCode: `${teamId}1` });
   }
 
   return (
-    <section className="view-stack">
+    <section className="view-stack cracks-view">
       <Toolbar>
-        <input value={query} placeholder="Buscar por nombre, seleccion o codigo..." onChange={(event) => setQuery(event.target.value)} />
+        <Input value={query} placeholder="Buscar por nombre, seleccion o codigo..." onChange={(event) => setQuery(event.target.value)} />
       </Toolbar>
-      <form className="inline-form" onSubmit={addCrack}>
-        <input value={form.player} placeholder="Nombre del jugador" onChange={(event) => setForm({ ...form, player: event.target.value })} />
-        <select value={form.teamId} onChange={(event) => setForm({ ...form, teamId: event.target.value })}>
-          {catalog.teams.map((team) => (
-            <option key={team.id} value={team.id}>{team.name}</option>
-          ))}
-        </select>
-        <input min="1" max="20" type="number" value={form.number} onChange={(event) => setForm({ ...form, number: event.target.value })} />
-        <button type="submit">Agregar crack</button>
+      <form className="crack-form" onSubmit={addCrack}>
+        <Select value={form.teamId} onValueChange={selectTeam}>
+          <SelectTrigger aria-label="Seleccion">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {catalog.teams.map((team) => (
+              <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={form.stickerCode} onValueChange={(stickerCode) => setForm({ ...form, stickerCode })}>
+          <SelectTrigger className="crack-code-select" aria-label="Identificador de jugador">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {teamStickers.map((sticker) => (
+              <SelectItem key={sticker.code} value={sticker.code}>{sticker.code} - {sticker.title}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="crack-form-action">
+          <Button type="submit">
+            <Plus />
+            Agregar crack
+          </Button>
+        </div>
       </form>
       <div className="crack-grid">
         {visible.map((crack) => {
@@ -56,21 +81,25 @@ export function Cracks({ state, patch }) {
           const found = sticker && copiesFor(state, sticker) > 0;
           return (
             <article className={`crack-card ${found ? 'found' : ''}`} key={crack.id}>
-              <div>
-                <strong>{crack.player}</strong>
-                <span>{teamById[crack.teamId]?.name} - {crack.stickerCode}</span>
+              <div className="crack-card-main">
+                <strong>{crack.stickerCode}</strong>
+                <span>{crack.player} - {teamById[crack.teamId]?.name}</span>
               </div>
-              <small>{crack.official ? 'Crack oficial' : 'Personalizado'}</small>
-              <b>{found ? 'Encontrado' : 'Pendiente'}</b>
-              {!crack.official && (
-                <button
-                  type="button"
-                  className="ghost danger"
-                  onClick={() => patch((current) => ({ ...current, customCracks: current.customCracks.filter((item) => item.id !== crack.id) }), 'Crack eliminado.')}
-                >
-                  Eliminar
-                </button>
-              )}
+              <div className="crack-card-meta">
+                <small>{crack.official ? 'Crack oficial' : 'Personalizado'}</small>
+                <b>{found ? 'Encontrado' : 'Pendiente'}</b>
+                {!crack.official && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => patch((current) => ({ ...current, customCracks: current.customCracks.filter((item) => item.id !== crack.id) }), 'Crack eliminado.')}
+                  >
+                    <Trash2 />
+                    Eliminar
+                  </Button>
+                )}
+              </div>
             </article>
           );
         })}
