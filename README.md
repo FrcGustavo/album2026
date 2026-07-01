@@ -26,6 +26,18 @@ pnpm install
 pnpm dev
 ```
 
+## Arquitectura
+
+La app esta organizada con una arquitectura hexagonal ligera:
+
+- `src/domain`: catalogo, estado del album y reglas puras de negocio.
+- `src/application`: casos de uso que coordinan operaciones del album.
+- `src/infrastructure`: adaptadores externos, por ahora persistencia en `localStorage`.
+- `src/ui`: adaptador de entrada React, con `views` para pantallas y `components` para piezas reutilizables.
+- `src/main.jsx`: bootstrap de React.
+
+Esta separacion permite reemplazar el checklist, persistir en otro backend o agregar tests de reglas sin tocar los componentes.
+
 ## Fuentes consultadas
 
 - AP News: reporta 980 stickers, 48 equipos, sobres de 7 y demanda de la coleccion.
