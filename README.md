@@ -1,25 +1,79 @@
 # Album Mundial 2026 MX
 
-Aplicacion React + FastAPI para registrar el avance personal del album de la Copa Mundial FIFA 2026, con conteo de calcomanias pegadas, repetidas, faltantes, especiales, estrellas y Coca-Cola. El album se guarda en el backend con autenticacion JWT.
+Una app para llevar el control de tu album del Mundial 2026 Mexico.
 
-## Investigacion base
+Sirve para registrar que figuritas ya tienes, cuales te faltan, cuantas repetidas juntaste, cuanto has gastado y como va tu avance por seleccion. Tu progreso se guarda en una cuenta, asi que puedes volver a entrar despues y continuar donde te quedaste.
 
-- La Copa Mundial 2026 se juega en Canada, Mexico y Estados Unidos, con 48 equipos, 16 ciudades sede, 104 partidos y formato de 12 grupos de 4.
-- La edicion 2026 fue reportada por medios como la mas grande hasta ahora: 980 stickers, album de 112 paginas, sobres de 7 stickers y 68 stickers especiales.
-- La cobertura consultada menciona una doble pagina de 12 stickers Coca-Cola disponibles por promocion.
-- No encontre un checklist oficial completo y publico de la edicion Mexico con numeracion, nombres y orden exacto. Por eso el catalogo incluido es una estructura versionable de 980 espacios: 36 apertura/sedes, 864 equipos, 68 estrellas y 12 Coca-Cola.
+App publicada: [https://album2026mx.app.bgcore.app/](https://album2026mx.app.bgcore.app/)
 
-## Plan de implementacion
+## Como se ve
 
-1. Crear MVP frontend con React.
-2. Modelar el album como catalogo versionable de 980 espacios.
-3. Permitir captura rapida de una o muchas calcomanias por numero.
-4. Contar copias para distinguir pegadas y repetidas.
-5. Mostrar progreso, faltantes, repetidas, estrellas y Coca-Cola.
-6. Agregar busqueda, filtros por estado/tipo/equipo e importacion/exportacion JSON.
-7. Cuando exista un checklist oficial de Mexico, reemplazar `buildCatalog()` por un archivo `catalog.mx-2026.json` validado.
+![Dashboard del album](docs/screenshots/album-dashboard-desktop.png)
 
-## Desarrollo
+![Album completo por selecciones](docs/screenshots/album-grid-desktop.png)
+
+![Vista movil del album](docs/screenshots/album-grid-mobile.png)
+
+## Que puedes hacer
+
+- Crear una cuenta e iniciar sesion.
+- Registrar una o varias figuritas rapidamente por codigo.
+- Ver cuantas tienes, cuantas faltan y cuantas estan repetidas.
+- Revisar el progreso por seleccion.
+- Marcar especiales, cracks y figuritas Coca-Cola.
+- Registrar compras para estimar el gasto del album.
+- Exportar o importar un respaldo JSON desde la configuracion.
+
+## Ejecutarlo en tu computadora
+
+La forma mas sencilla es con Docker. No necesitas instalar Node, Python ni Postgres por separado.
+
+### 1. Instala Docker Desktop
+
+Descargalo desde [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/).
+
+### 2. Clona este repositorio
+
+```bash
+git clone git@github.com:FrcGustavo/album2026.git
+cd album2026
+```
+
+### 3. Levanta la app
+
+```bash
+docker compose up --build
+```
+
+Cuando termine de arrancar, abre:
+
+- App: [http://localhost:8080](http://localhost:8080)
+- API: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+### 4. Crea tu cuenta
+
+Entra a la app, presiona `Crear cuenta` y empieza a registrar tu album.
+
+### 5. Detener la app
+
+En la terminal donde corre Docker, presiona `Ctrl + C`.
+
+Si quieres borrar tambien la base de datos local de Docker:
+
+```bash
+docker compose down -v
+```
+
+## Ejecutarlo para desarrollo
+
+Esta opcion es para quien quiera modificar el codigo.
+
+Necesitas:
+
+- Node.js / pnpm
+- Python 3.12+
+
+Instala dependencias y levanta frontend + backend:
 
 ```bash
 pnpm install
@@ -31,102 +85,29 @@ cd ../..
 pnpm dev:all
 ```
 
-El monorepo separa las apps en:
+Despues abre:
 
-- `apps/frontend`: app React + Vite.
-- `apps/backend`: API FastAPI + SQLAlchemy, SQLite en desarrollo y Postgres en produccion.
+- Frontend: [http://localhost:5173](http://localhost:5173)
+- Backend: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
-Scripts desde la raiz:
+## Mas detalles
 
-- `pnpm dev`: frontend.
-- `pnpm dev:api`: backend en `127.0.0.1:8000`.
-- `pnpm dev:all`: frontend y backend.
-- `pnpm build`: build del frontend.
-- `pnpm test:api`: tests del backend.
-- `pnpm test:frontend`: tests del frontend.
-- `pnpm lint`: lint del frontend.
+- Frontend React: [apps/frontend/README.md](apps/frontend/README.md)
+- Backend FastAPI: [apps/backend/README.md](apps/backend/README.md)
+- Documentacion tecnica general: [docs/technical.md](docs/technical.md)
 
-Variables del backend:
+## Estructura del proyecto
 
-- `ALBUM_ENV`: default `development`. En `production` exige un secreto JWT explicito.
-- `ALBUM_DATABASE_URL`: default `sqlite:///./data/album.sqlite`. En produccion usa Postgres, por ejemplo `postgresql+psycopg://user:password@host:5432/db`.
-- `ALBUM_AUTO_CREATE_TABLES`: default `true` para desarrollo. En `production` debe ser `false`; usa Alembic para migraciones.
-- `ALBUM_JWT_SECRET_KEY`: secreto para firmar tokens; obligatorio en `production`.
-- `ALBUM_JWT_ALGORITHM`: default `HS256`.
-- `ALBUM_ACCESS_TOKEN_EXPIRE_MINUTES`: default `1440`.
-- `ALBUM_CORS_ORIGINS`: obligatorio en produccion. Origenes permitidos separados por coma, por ejemplo `https://album.example.com,https://admin.example.com`.
-
-Variables del frontend:
-
-- `VITE_API_BASE_URL`: URL publica del backend, por ejemplo `https://api.example.com/api`. Vite la lee en tiempo de build, asi que debe definirse al construir la imagen o el bundle.
-
-## Produccion, Postgres y migraciones
-
-El backend esta preparado para Postgres usando SQLAlchemy + `psycopg` y migraciones con Alembic.
-
-```bash
-cd apps/backend
-ALBUM_DATABASE_URL="postgresql+psycopg://album:secret@localhost:5432/album" alembic upgrade head
-ALBUM_ENV=production \
-ALBUM_AUTO_CREATE_TABLES=false \
-ALBUM_DATABASE_URL="postgresql+psycopg://album:secret@localhost:5432/album" \
-ALBUM_JWT_SECRET_KEY="un-secreto-largo-y-aleatorio" \
-ALBUM_CORS_ORIGINS="https://album.example.com" \
-uvicorn app.main:app --host 0.0.0.0 --port 8000
+```text
+apps/
+  frontend/   La interfaz web del album
+  backend/    La API, usuarios y guardado del album
+docs/
+  screenshots/ Capturas usadas en este README
+  technical.md Detalles tecnicos del proyecto
+docker-compose.yml
 ```
 
-En produccion la app falla al iniciar si conserva el secreto JWT default o si `ALBUM_AUTO_CREATE_TABLES=true`.
+## Notas
 
-## Docker
-
-Si, se puede compilar y correr con Docker. Hay imagenes separadas para backend y frontend, mas un `docker-compose.yml` de referencia con Postgres:
-
-```bash
-docker compose up --build
-```
-
-El compose publica:
-
-- Frontend: `http://localhost:8080`
-- Backend: `http://localhost:8000`
-- Postgres: `localhost:5432`
-
-Para un deploy real cambia `ALBUM_JWT_SECRET_KEY`, `ALBUM_DATABASE_URL`, `ALBUM_CORS_ORIGINS` y el build arg `VITE_API_BASE_URL`.
-
-## API y autenticacion
-
-La API vive en `http://127.0.0.1:8000/api` y la documentacion Swagger en `http://127.0.0.1:8000/docs`.
-
-Flujo principal:
-
-1. `POST /api/auth/register` crea cuenta con `email`, `name` y `password`.
-2. `POST /api/auth/login` devuelve `access_token`.
-3. El frontend envia `Authorization: Bearer <token>`.
-4. El album se lee y guarda con rutas `/api/me/album`.
-
-No hay guardado local del album: si el backend no esta disponible, la app muestra error y no persiste cambios en el navegador.
-
-## Arquitectura
-
-El frontend esta organizado con una arquitectura hexagonal ligera:
-
-- `apps/frontend/src/domain`: catalogo, estado del album y reglas puras de negocio.
-- `apps/frontend/src/application`: casos de uso y hooks que coordinan sesion, carga y guardado remoto.
-- `apps/frontend/src/infrastructure`: adaptadores externos y API remota.
-- `apps/frontend/src/ui`: adaptador de entrada React, con `views` para pantallas y `components` para piezas reutilizables.
-- `apps/frontend/src/main.jsx`: bootstrap de React.
-
-El backend replica la separacion hexagonal:
-
-- `apps/backend/app/domain`: reglas puras, catalogo, estado y estadisticas.
-- `apps/backend/app/application`: servicios/casos de uso y puertos como hashing y tokens.
-- `apps/backend/app/infrastructure`: SQLAlchemy, repositorios, hashing y JWT concretos.
-- `apps/backend/app/interfaces/http`: routers, schemas FastAPI y wiring de dependencias.
-
-Esta separacion permite reemplazar el checklist, persistir en otro backend o agregar tests de reglas sin tocar los componentes.
-
-## Fuentes consultadas
-
-- AP News: reporta 980 stickers, 48 equipos, sobres de 7 y demanda de la coleccion.
-- FourFourTwo: reporta lanzamiento, album de 112 paginas, 980 stickers, 68 especiales y 12 Coca-Cola.
-- FIFA/Wikipedia como referencia secundaria para formato del torneo, sedes y 48 equipos.
+El catalogo incluido es una estructura versionable para llevar el control del album. Si despues aparece un checklist oficial completo para Mexico, se puede reemplazar el catalogo sin cambiar toda la app.
