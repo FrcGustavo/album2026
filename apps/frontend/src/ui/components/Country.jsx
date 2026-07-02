@@ -31,12 +31,16 @@ export function CountryCard({ team }) {
 export function CountryRow({ team }) {
   return (
     <article className="country-row">
-      <img src={team.flagUrl} alt="" />
-      <strong>{team.name}</strong>
+      <div className="country-row-main">
+        <img src={team.flagUrl} alt="" />
+        <strong>{team.name}</strong>
+      </div>
       <ProgressBar percent={team.percent} />
-      <span>{team.owned}/{team.total}</span>
-      <span>{team.missing} faltan</span>
-      <span>{team.repeated} rep.</span>
+      <div className="country-row-stats">
+        <span>{team.owned}/{team.total}</span>
+        <span>{team.missing} faltan</span>
+        <span>{team.repeated} rep.</span>
+      </div>
     </article>
   );
 }

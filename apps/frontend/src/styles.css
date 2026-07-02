@@ -852,6 +852,8 @@ h2 {
 .switch-panel,
 .history-item,
 .country-row,
+.country-row-main,
+.country-row-stats,
 .crack-card {
   display: grid;
   align-items: center;
@@ -1000,13 +1002,28 @@ h2 {
 }
 
 .country-row {
-  grid-template-columns: 42px minmax(120px, 1fr) minmax(120px, 0.8fr) auto auto auto;
-  padding: 10px 0;
+  grid-template-columns: minmax(180px, 1fr) minmax(120px, 0.8fr) auto;
+  padding: 12px 0;
   border-bottom: 1px solid var(--muted);
 }
 
 .country-row:last-child {
   border-bottom: 0;
+}
+
+.country-row-main {
+  grid-template-columns: 42px minmax(0, 1fr);
+}
+
+.country-row-main strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.country-row-stats {
+  grid-template-columns: repeat(3, max-content);
+  justify-content: end;
+  gap: 8px;
 }
 
 .crack-card {
@@ -1192,13 +1209,45 @@ h2 {
   }
 
   .country-row {
-    grid-template-columns: 42px minmax(0, 1fr) auto;
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 10px;
+    padding: 16px 0;
   }
 
-  .country-row [role="progressbar"],
-  .country-row span:nth-of-type(2),
-  .country-row span:nth-of-type(3) {
-    grid-column: 2 / -1;
+  .country-row-main {
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .country-row-main img {
+    width: 58px;
+    height: 42px;
+  }
+
+  .country-row-main strong {
+    font-size: 1.05rem;
+    line-height: 1.12;
+  }
+
+  .country-row-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    justify-content: stretch;
+    gap: 8px;
+  }
+
+  .country-row-stats span {
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: #eef4ef;
+    color: #34524a;
+    font-size: 0.85rem;
+    font-weight: 850;
+    line-height: 1.1;
+    text-align: center;
   }
 
   .cracks-view .crack-card {
@@ -1312,6 +1361,7 @@ h2 {
   }
 
   .section-nav {
+    position: static;
     margin: 10px 0 14px;
     padding: 8px 0;
   }
@@ -1433,14 +1483,6 @@ h2 {
 
   .history-item .ui-button {
     width: 100%;
-  }
-
-  .country-row {
-    gap: 8px;
-  }
-
-  .country-row img {
-    align-self: start;
   }
 
   .settings-form-actions {
