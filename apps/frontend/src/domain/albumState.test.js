@@ -46,6 +46,19 @@ describe('albumState domain', () => {
     expect(catalog.stickers).toHaveLength(980);
   });
 
+  it('includes Panama in the 980-sticker base catalog', () => {
+    expect(teamById.PAN).toMatchObject({
+      code: 'PAN',
+      name: 'Panama'
+    });
+    expect(stickerByCode.PAN1).toMatchObject({
+      code: 'PAN1',
+      teamId: 'PAN',
+      title: 'Escudo Panama'
+    });
+    expect(catalog.stickers).toHaveLength(980);
+  });
+
   it('sanitizes unknown codes and normalizes copy counts', () => {
     const state = sanitizeState({
       stickers: { MEX1: '2', NOPE: 3, MEX2: -1 },

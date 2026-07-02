@@ -47,7 +47,7 @@ RAW_TEAMS = [
     ("SCO", "Escocia", "gb-sct"),
     ("TUR", "Turquia", "tr"),
     ("CZE", "Republica Checa", "cz"),
-    ("DEN", "Dinamarca", "dk"),
+    ("PAN", "Panama", "pa"),
     ("SWE", "Suecia", "se"),
     ("BIH", "Bosnia y Herzegovina", "ba"),
     ("HAI", "Haiti", "ht"),
