@@ -86,7 +86,7 @@ export function App({ createAlbumRepository, tokenStorage }) {
       <header className="app-header">
         <div>
           <div className="hero-title-block">
-            <p className="eyebrow">Album Panini Mundial 2026 - Mexico</p>
+            <p className="eyebrow">Album Mundial 2026 - Mexico</p>
           </div>
           <div className="hero-status-block">
             <p className={`sync-pill ${syncStatus}`}>{syncLabel(syncStatus, user)}</p>

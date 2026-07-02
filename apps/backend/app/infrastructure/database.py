@@ -44,6 +44,8 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
 def init_db() -> None:
+    if not get_settings().auto_create_tables:
+        return
     Base.metadata.create_all(bind=engine)
     _ensure_auth_columns()
 

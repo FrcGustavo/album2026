@@ -146,7 +146,7 @@ def delete_purchase(purchase_id: str, user: User = Depends(current_user), servic
 def export_album(user: User = Depends(current_user), service: AlbumService = Depends(get_album_service)):
     state = _album_call(lambda: service.export_album(user.id))
     exported_at = datetime.now(timezone.utc).isoformat()
-    headers = {"Content-Disposition": f'attachment; filename="album-panini-{user.id}.json"'}
+    headers = {"Content-Disposition": f'attachment; filename="album-album-{user.id}.json"'}
     return Response(
         content=AlbumState(**state).model_dump_json(indent=2),
         media_type="application/json",

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-const TOKEN_KEY = 'panini-world-cup-2026-mx-token';
+const TOKEN_KEY = 'album-world-cup-2026-mx-token';
 
 const browserTokenStorage = {
   getItem: (key) => globalThis.localStorage?.getItem(key),

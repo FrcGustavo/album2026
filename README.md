@@ -1,11 +1,11 @@
-# Panini Mundial 2026 MX
+# Album Mundial 2026 MX
 
-Aplicacion React + FastAPI para registrar el avance personal del album Panini de la Copa Mundial FIFA 2026, con conteo de calcomanias pegadas, repetidas, faltantes, especiales, estrellas y Coca-Cola. El album se guarda en el backend con autenticacion JWT.
+Aplicacion React + FastAPI para registrar el avance personal del album de la Copa Mundial FIFA 2026, con conteo de calcomanias pegadas, repetidas, faltantes, especiales, estrellas y Coca-Cola. El album se guarda en el backend con autenticacion JWT.
 
 ## Investigacion base
 
 - La Copa Mundial 2026 se juega en Canada, Mexico y Estados Unidos, con 48 equipos, 16 ciudades sede, 104 partidos y formato de 12 grupos de 4.
-- La edicion Panini 2026 fue reportada por medios como la mas grande hasta ahora: 980 stickers, album de 112 paginas, sobres de 7 stickers y 68 stickers especiales.
+- La edicion 2026 fue reportada por medios como la mas grande hasta ahora: 980 stickers, album de 112 paginas, sobres de 7 stickers y 68 stickers especiales.
 - La cobertura consultada menciona una doble pagina de 12 stickers Coca-Cola disponibles por promocion.
 - No encontre un checklist oficial completo y publico de la edicion Mexico con numeracion, nombres y orden exacto. Por eso el catalogo incluido es una estructura versionable de 980 espacios: 36 apertura/sedes, 864 equipos, 68 estrellas y 12 Coca-Cola.
 
@@ -17,7 +17,7 @@ Aplicacion React + FastAPI para registrar el avance personal del album Panini de
 4. Contar copias para distinguir pegadas y repetidas.
 5. Mostrar progreso, faltantes, repetidas, estrellas y Coca-Cola.
 6. Agregar busqueda, filtros por estado/tipo/equipo e importacion/exportacion JSON.
-7. Cuando Panini Mexico publique el checklist oficial, reemplazar `buildCatalog()` por un archivo `catalog.mx-2026.json` validado.
+7. Cuando exista un checklist oficial de Mexico, reemplazar `buildCatalog()` por un archivo `catalog.mx-2026.json` validado.
 
 ## Desarrollo
 
@@ -34,7 +34,7 @@ pnpm dev:all
 El monorepo separa las apps en:
 
 - `apps/frontend`: app React + Vite.
-- `apps/backend`: API FastAPI + SQLite.
+- `apps/backend`: API FastAPI + SQLAlchemy, SQLite en desarrollo y Postgres en produccion.
 
 Scripts desde la raiz:
 
@@ -43,14 +43,55 @@ Scripts desde la raiz:
 - `pnpm dev:all`: frontend y backend.
 - `pnpm build`: build del frontend.
 - `pnpm test:api`: tests del backend.
+- `pnpm test:frontend`: tests del frontend.
+- `pnpm lint`: lint del frontend.
 
 Variables del backend:
 
-- `PANINI_ENV`: default `development`. En `production` exige un secreto JWT explicito.
-- `PANINI_DATABASE_URL`: default `sqlite:///./data/panini.sqlite`.
-- `PANINI_JWT_SECRET_KEY`: secreto para firmar tokens; obligatorio en `production`.
-- `PANINI_JWT_ALGORITHM`: default `HS256`.
-- `PANINI_ACCESS_TOKEN_EXPIRE_MINUTES`: default `1440`.
+- `ALBUM_ENV`: default `development`. En `production` exige un secreto JWT explicito.
+- `ALBUM_DATABASE_URL`: default `sqlite:///./data/album.sqlite`. En produccion usa Postgres, por ejemplo `postgresql+psycopg://user:password@host:5432/db`.
+- `ALBUM_AUTO_CREATE_TABLES`: default `true` para desarrollo. En `production` debe ser `false`; usa Alembic para migraciones.
+- `ALBUM_JWT_SECRET_KEY`: secreto para firmar tokens; obligatorio en `production`.
+- `ALBUM_JWT_ALGORITHM`: default `HS256`.
+- `ALBUM_ACCESS_TOKEN_EXPIRE_MINUTES`: default `1440`.
+- `ALBUM_CORS_ORIGINS`: obligatorio en produccion. Origenes permitidos separados por coma, por ejemplo `https://album.example.com,https://admin.example.com`.
+
+Variables del frontend:
+
+- `VITE_API_BASE_URL`: URL publica del backend, por ejemplo `https://api.example.com/api`. Vite la lee en tiempo de build, asi que debe definirse al construir la imagen o el bundle.
+
+## Produccion, Postgres y migraciones
+
+El backend esta preparado para Postgres usando SQLAlchemy + `psycopg` y migraciones con Alembic.
+
+```bash
+cd apps/backend
+ALBUM_DATABASE_URL="postgresql+psycopg://album:secret@localhost:5432/album" alembic upgrade head
+ALBUM_ENV=production \
+ALBUM_AUTO_CREATE_TABLES=false \
+ALBUM_DATABASE_URL="postgresql+psycopg://album:secret@localhost:5432/album" \
+ALBUM_JWT_SECRET_KEY="un-secreto-largo-y-aleatorio" \
+ALBUM_CORS_ORIGINS="https://album.example.com" \
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+En produccion la app falla al iniciar si conserva el secreto JWT default o si `ALBUM_AUTO_CREATE_TABLES=true`.
+
+## Docker
+
+Si, se puede compilar y correr con Docker. Hay imagenes separadas para backend y frontend, mas un `docker-compose.yml` de referencia con Postgres:
+
+```bash
+docker compose up --build
+```
+
+El compose publica:
+
+- Frontend: `http://localhost:8080`
+- Backend: `http://localhost:8000`
+- Postgres: `localhost:5432`
+
+Para un deploy real cambia `ALBUM_JWT_SECRET_KEY`, `ALBUM_DATABASE_URL`, `ALBUM_CORS_ORIGINS` y el build arg `VITE_API_BASE_URL`.
 
 ## API y autenticacion
 
@@ -79,7 +120,7 @@ El backend replica la separacion hexagonal:
 
 - `apps/backend/app/domain`: reglas puras, catalogo, estado y estadisticas.
 - `apps/backend/app/application`: servicios/casos de uso y puertos como hashing y tokens.
-- `apps/backend/app/infrastructure`: SQLite, SQLAlchemy, repositorios, hashing y JWT concretos.
+- `apps/backend/app/infrastructure`: SQLAlchemy, repositorios, hashing y JWT concretos.
 - `apps/backend/app/interfaces/http`: routers, schemas FastAPI y wiring de dependencias.
 
 Esta separacion permite reemplazar el checklist, persistir en otro backend o agregar tests de reglas sin tocar los componentes.

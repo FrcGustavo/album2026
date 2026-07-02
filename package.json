@@ -1,12 +1,12 @@
 {
-  "name": "panini-mundial-2026-mx",
+  "name": "album-mundial-2026-mx",
   "version": "0.1.0",
   "private": true,
-  "description": "Registro personal para el album Panini del Mundial 2026 en Mexico.",
+  "description": "Registro personal para el album del Mundial 2026 en Mexico.",
   "type": "module",
   "scripts": {
     "dev": "pnpm --dir apps/frontend dev",
-    "dev:api": "cd apps/backend && python3 -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000",
+    "dev:api": "cd apps/backend && ALBUM_CORS_ORIGINS=http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:5175,http://127.0.0.1:5176,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176 python3 -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000",
     "dev:all": "sh -c 'pnpm run dev:api & pnpm run dev; wait'",
     "build": "pnpm --dir apps/frontend build",
     "test:api": "cd apps/backend && python3 -m pytest",

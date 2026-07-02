@@ -1,0 +1,48 @@
+name: album
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: album
+      POSTGRES_USER: album
+      POSTGRES_PASSWORD: album-dev-password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U album -d album"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: album-backend:latest
+    build:
+      context: ./apps/backend
+    environment:
+      ALBUM_ENV: production
+      ALBUM_AUTO_CREATE_TABLES: "false"
+      ALBUM_DATABASE_URL: postgresql+psycopg://album:album-dev-password@postgres:5432/album
+      ALBUM_JWT_SECRET_KEY: replace-with-a-long-random-secret
+      ALBUM_CORS_ORIGINS: http://localhost:8080,http://127.0.0.1:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  frontend:
+    image: album-frontend:latest
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: http://127.0.0.1:8000/api
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  postgres_data:
+    name: album_postgres_data

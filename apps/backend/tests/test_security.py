@@ -31,3 +31,19 @@ def test_token_service_rejects_expired_token():
 def test_production_requires_explicit_jwt_secret():
     with pytest.raises(ValueError):
         validate_settings(Settings(env="production"))
+
+
+def test_production_requires_migrations_instead_of_auto_create():
+    with pytest.raises(ValueError):
+        validate_settings(Settings(env="production", jwt_secret_key="test-secret", auto_create_tables=True))
+
+
+def test_production_requires_cors_origins():
+    with pytest.raises(ValueError):
+        validate_settings(Settings(env="production", jwt_secret_key="test-secret", auto_create_tables=False))
+
+
+def test_cors_origins_can_be_configured_from_comma_separated_env():
+    settings = Settings(cors_origins="https://album.example.com, https://admin.example.com")
+
+    assert settings.cors_origin_list == ["https://album.example.com", "https://admin.example.com"]

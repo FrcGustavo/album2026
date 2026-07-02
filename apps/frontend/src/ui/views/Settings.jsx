@@ -11,7 +11,7 @@ export function Settings({ state, update, user, syncStatus, logout }) {
   const [message, setMessage] = useState('');
 
   function exportJson() {
-    const payload = JSON.stringify({ app: 'panini-world-cup-2026-mx', version: 2, exportedAt: new Date().toISOString(), state }, null, 2);
+    const payload = JSON.stringify({ app: 'album-world-cup-2026-mx', version: 2, exportedAt: new Date().toISOString(), state }, null, 2);
     const blob = new Blob([payload], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');

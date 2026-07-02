@@ -1,6 +1,6 @@
-# Panini Backend
+# Album Backend
 
-Backend FastAPI para guardar albumes por usuario usando SQLite local y autenticacion JWT.
+Backend FastAPI para guardar albumes por usuario usando SQLAlchemy, SQLite local en desarrollo, Postgres en produccion y autenticacion JWT.
 
 ## Desarrollo
 
@@ -19,13 +19,30 @@ Swagger vive en `http://127.0.0.1:8000/docs`.
 
 Variables disponibles:
 
-- `PANINI_ENV`: default `development`. En `production` exige un secreto JWT explicito.
-- `PANINI_DATABASE_URL`: default `sqlite:///./data/panini.sqlite`.
-- `PANINI_JWT_SECRET_KEY`: secreto para firmar tokens; obligatorio en `production`.
-- `PANINI_JWT_ALGORITHM`: default `HS256`.
-- `PANINI_ACCESS_TOKEN_EXPIRE_MINUTES`: default `1440`.
+- `ALBUM_ENV`: default `development`. En `production` exige un secreto JWT explicito.
+- `ALBUM_DATABASE_URL`: default `sqlite:///./data/album.sqlite`. Para Postgres usa `postgresql+psycopg://user:password@host:5432/db`.
+- `ALBUM_AUTO_CREATE_TABLES`: default `true` para desarrollo. En `production` debe ser `false` y se deben ejecutar migraciones Alembic.
+- `ALBUM_JWT_SECRET_KEY`: secreto para firmar tokens; obligatorio en `production`.
+- `ALBUM_JWT_ALGORITHM`: default `HS256`.
+- `ALBUM_ACCESS_TOKEN_EXPIRE_MINUTES`: default `1440`.
+- `ALBUM_CORS_ORIGINS`: obligatorio en produccion. Origenes permitidos separados por coma, por ejemplo `https://album.example.com,https://admin.example.com`.
 
-Si `PANINI_ENV=production` y `PANINI_JWT_SECRET_KEY` conserva el valor default, la app falla al iniciar.
+Si `ALBUM_ENV=production`, la app falla al iniciar cuando `ALBUM_JWT_SECRET_KEY` conserva el valor default, `ALBUM_AUTO_CREATE_TABLES=true` o `ALBUM_CORS_ORIGINS` esta vacio.
+
+## Migraciones
+
+```bash
+cd apps/backend
+alembic upgrade head
+```
+
+Para crear una nueva migracion despues de cambiar modelos:
+
+```bash
+alembic revision --autogenerate -m "descripcion"
+```
+
+La URL de base se toma de `ALBUM_DATABASE_URL`.
 
 ## Autenticacion
 
@@ -67,11 +84,26 @@ El estado se guarda en `album_states.state_json` para conservar una persistencia
 
 - `domain`: reglas puras del album, catalogo y estadisticas.
 - `application`: servicios de usuario/album y puertos para hashing y tokens.
-- `infrastructure`: SQLAlchemy, SQLite, repositorios, `passlib` y `python-jose`.
+- `infrastructure`: SQLAlchemy, repositorios, `passlib` y `python-jose`.
 - `interfaces/http`: FastAPI, schemas, rutas y dependencias que conectan puertos con implementaciones.
 
 ## Tests
 
 ```bash
 python3 -m pytest
+```
+
+## Docker
+
+La imagen del backend ejecuta `alembic upgrade head` antes de iniciar Uvicorn.
+
+```bash
+docker build -t album-backend .
+docker run --rm -p 8000:8000 \
+  -e ALBUM_ENV=production \
+  -e ALBUM_AUTO_CREATE_TABLES=false \
+  -e ALBUM_DATABASE_URL=postgresql+psycopg://album:secret@db:5432/album \
+  -e ALBUM_JWT_SECRET_KEY=replace-with-a-long-random-secret \
+  -e ALBUM_CORS_ORIGINS=https://album.example.com \
+  album-backend
 ```
