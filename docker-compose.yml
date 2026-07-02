@@ -16,7 +16,7 @@ services:
       retries: 10
 
   backend:
-    image: album-backend:latest
+    image: frcgustavo/album-backend:latest
     build:
       context: ./apps/backend
     environment:
@@ -32,7 +32,7 @@ services:
       - "8000:8000"
 
   frontend:
-    image: album-frontend:latest
+    image: frcgustavo/album-frontend:latest
     build:
       context: .
       dockerfile: apps/frontend/Dockerfile
