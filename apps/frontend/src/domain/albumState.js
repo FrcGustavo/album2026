@@ -122,10 +122,12 @@ export function getAlbumStats(state) {
   const all = summarizeList(active, state);
   const shields = summarizeList(catalog.stickers.filter((sticker) => sticker.isShield), state);
   const teamPhotos = summarizeList(catalog.stickers.filter((sticker) => sticker.isTeamPhoto), state);
+  const shieldsAndTeamPhotos = summarizeList(catalog.stickers.filter((sticker) => sticker.isShield || sticker.isTeamPhoto), state);
   const specials = summarizeList(catalog.specials, state);
   const cocaCola = summarizeList(catalog.addons.cocaCola.stickers, state);
   const cracks = getCracks(state);
   const foundCracks = cracks.filter((crack) => copiesFor(state, stickerByCode[crack.stickerCode]) > 0).length;
+  const completedTeams = summarizeCompletedTeams(state);
 
   return {
     ...all,
@@ -133,6 +135,8 @@ export function getAlbumStats(state) {
     activeTotal: active.length,
     shields,
     teamPhotos,
+    shieldsAndTeamPhotos,
+    completedTeams,
     specials,
     cocaCola,
     cracks: {
@@ -141,6 +145,22 @@ export function getAlbumStats(state) {
       missing: cracks.length - foundCracks,
       percent: cracks.length ? Math.round((foundCracks / cracks.length) * 1000) / 10 : 0
     }
+  };
+}
+
+export function summarizeCompletedTeams(state) {
+  const completed = catalog.teams.filter((team) => {
+    const stickers = getTeamStickers(team.id);
+    const summary = summarizeList(stickers, state);
+    return summary.total > 0 && summary.owned === summary.total;
+  }).length;
+
+  return {
+    total: catalog.teams.length,
+    owned: completed,
+    missing: catalog.teams.length - completed,
+    repeated: 0,
+    percent: catalog.teams.length ? Math.round((completed / catalog.teams.length) * 1000) / 10 : 0
   };
 }
 

@@ -57,8 +57,8 @@ export function Dashboard({ state, update, notice, albumStats, countryStats, cos
       </div>
 
       <div className="metric-grid dashboard-metric-grid">
-        <ProgressCard title="Escudos" summary={albumStats.shields} />
-        <ProgressCard title="Equipos completos" summary={albumStats.teamPhotos} />
+        <ProgressCard title="Escudos y equipos" summary={albumStats.shieldsAndTeamPhotos} />
+        <ProgressCard title="Selecciones completas" summary={albumStats.completedTeams} label="completas" />
         <ProgressCard title="Especiales" summary={albumStats.specials} />
         <ProgressCard title="Cracks" summary={albumStats.cracks} />
         <ProgressCard title="Coca-Cola" summary={albumStats.cocaCola} disabled={!state.cocaColaEnabled} />

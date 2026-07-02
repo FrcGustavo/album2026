@@ -144,6 +144,8 @@ def get_album_stats(state: dict[str, Any]) -> dict[str, Any]:
         "activeTotal": len(active),
         "shields": summarize_list([s for s in catalog["stickers"] if s["isShield"]], clean),
         "teamPhotos": summarize_list([s for s in catalog["stickers"] if s["isTeamPhoto"]], clean),
+        "shieldsAndTeamPhotos": summarize_list([s for s in catalog["stickers"] if s["isShield"] or s["isTeamPhoto"]], clean),
+        "completedTeams": summarize_completed_teams(clean),
         "specials": summarize_list(catalog["specials"], clean),
         "cocaCola": summarize_list(catalog["addons"]["cocaCola"]["stickers"], clean),
         "cracks": {
@@ -154,6 +156,26 @@ def get_album_stats(state: dict[str, Any]) -> dict[str, Any]:
         },
         "costs": get_cost_stats(clean, all_stickers),
     }
+
+
+def summarize_completed_teams(state: dict[str, Any]) -> dict[str, Any]:
+    completed = 0
+    for team in catalog["teams"]:
+        summary = summarize_list(get_team_stickers(team["id"]), state)
+        if summary["total"] > 0 and summary["owned"] == summary["total"]:
+            completed += 1
+    total = len(catalog["teams"])
+    return {
+        "total": total,
+        "owned": completed,
+        "missing": total - completed,
+        "repeated": 0,
+        "percent": round((completed / total) * 100, 1) if total else 0,
+    }
+
+
+def get_team_stickers(team_id: str) -> list[dict[str, Any]]:
+    return [sticker for sticker in catalog["stickers"] if sticker["teamId"] == team_id]
 
 
 def summarize_list(stickers: list[dict[str, Any]], state: dict[str, Any]) -> dict[str, Any]:

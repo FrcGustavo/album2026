@@ -100,6 +100,32 @@ describe('albumState domain', () => {
     expect(enabled.activeTotal).toBe(disabled.activeTotal + 14);
   });
 
+  it('summarizes shield and team photo stickers together', () => {
+    const withShieldAndTeam = [stickerByCode.MEX1, stickerByCode.MEX2].reduce(
+      (state, sticker) => setStickerCopies(state, sticker, 1),
+      emptyState()
+    );
+
+    expect(getAlbumStats(withShieldAndTeam).shieldsAndTeamPhotos).toMatchObject({
+      total: 96,
+      owned: 2,
+      missing: 94
+    });
+  });
+
+  it('counts completed teams only when all team stickers are owned', () => {
+    const partial = setStickerCopies(emptyState(), stickerByCode.MEX2, 1);
+    const complete = Array.from({ length: 20 }, (_, index) => stickerByCode[`MEX${index + 1}`]).reduce(
+      (state, sticker) => setStickerCopies(state, sticker, 1),
+      emptyState()
+    );
+
+    expect(getAlbumStats(emptyState()).completedTeams.owned).toBe(0);
+    expect(getAlbumStats(partial).completedTeams.owned).toBe(0);
+    expect(getAlbumStats(partial).teamPhotos.owned).toBe(1);
+    expect(getAlbumStats(complete).completedTeams.owned).toBe(1);
+  });
+
   it('calculates purchase costs with income offsets', () => {
     const state = sanitizeState({
       purchases: [

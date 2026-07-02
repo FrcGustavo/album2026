@@ -19,7 +19,7 @@ export function ProgressHero({ title, summary, helper }) {
   );
 }
 
-export function ProgressCard({ title, summary, disabled = false }) {
+export function ProgressCard({ title, summary, disabled = false, label = 'obtenidas' }) {
   return (
     <Card className={`progress-card ${disabled ? 'disabled' : ''}`}>
       <CardHeader>
@@ -30,7 +30,7 @@ export function ProgressCard({ title, summary, disabled = false }) {
       </CardHeader>
       <CardContent>
         <ProgressBar percent={disabled ? 0 : summary.percent} />
-        <small>{summary.owned}/{summary.total} obtenidas</small>
+        <small>{summary.owned}/{summary.total} {label}</small>
       </CardContent>
     </Card>
   );

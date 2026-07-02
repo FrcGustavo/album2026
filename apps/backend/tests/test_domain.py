@@ -61,6 +61,29 @@ def test_coca_cola_changes_active_total():
     assert enabled["activeTotal"] == disabled["activeTotal"] + 14
 
 
+def test_shields_and_team_photos_are_summarized_together():
+    state = empty_state()
+    state = increment_sticker(state, "MEX1")
+    state = increment_sticker(state, "MEX2")
+    summary = get_album_stats(state)["shieldsAndTeamPhotos"]
+
+    assert summary["total"] == 96
+    assert summary["owned"] == 2
+    assert summary["missing"] == 94
+
+
+def test_completed_teams_require_all_team_stickers():
+    partial = increment_sticker(empty_state(), "MEX2")
+    complete = empty_state()
+    for slot in range(1, 21):
+        complete = increment_sticker(complete, f"MEX{slot}")
+
+    assert get_album_stats(empty_state())["completedTeams"]["owned"] == 0
+    assert get_album_stats(partial)["completedTeams"]["owned"] == 0
+    assert get_album_stats(partial)["teamPhotos"]["owned"] == 1
+    assert get_album_stats(complete)["completedTeams"]["owned"] == 1
+
+
 def test_custom_crack_lifecycle():
     state = add_custom_crack(empty_state(), {"player": "Mi Crack", "teamId": "MEX", "stickerCode": "MEX11"})
     crack_id = state["customCracks"][0]["id"]
