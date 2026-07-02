@@ -16,7 +16,9 @@ export function FullAlbum({ state, patch }) {
         <Input value={query} placeholder="Buscar seleccion..." onChange={(event) => setQuery(event.target.value)} />
       </Toolbar>
       {GROUPS.map((group) => {
-        const groupTeams = teams.filter((team) => team.group === group);
+        const groupTeams = teams
+          .filter((team) => team.group === group)
+          .sort((a, b) => a.groupPosition - b.groupPosition);
         if (!groupTeams.length) return null;
         return (
           <section className="group-section" key={group}>

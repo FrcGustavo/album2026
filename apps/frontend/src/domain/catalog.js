@@ -52,6 +52,27 @@ const RAW_TEAMS = [
   ['CUW', 'Curazao', 'cw']
 ];
 
+export const FIFA_GROUPS = {
+  A: ['MEX', 'RSA', 'KOR', 'CZE'],
+  B: ['CAN', 'BIH', 'QAT', 'SUI'],
+  C: ['BRA', 'MAR', 'HAI', 'SCO'],
+  D: ['USA', 'PAR', 'AUS', 'TUR'],
+  E: ['GER', 'CUW', 'CIV', 'ECU'],
+  F: ['NED', 'JPN', 'SWE', 'TUN'],
+  G: ['BEL', 'EGY', 'IRN', 'NZL'],
+  H: ['ESP', 'CPV', 'KSA', 'URU'],
+  I: ['FRA', 'SEN', 'IRQ', 'NOR'],
+  J: ['ARG', 'ALG', 'AUT', 'JOR'],
+  K: ['POR', 'COD', 'UZB', 'COL'],
+  L: ['ENG', 'CRO', 'GHA', 'PAN']
+};
+
+const TEAM_GROUPS = Object.fromEntries(
+  Object.entries(FIFA_GROUPS).flatMap(([group, teamIds]) =>
+    teamIds.map((teamId, groupPosition) => [teamId, { group, groupPosition }])
+  )
+);
+
 export const STAR_PLAYERS = {
   CAN: 'Jonathan David',
   MEX: 'Edson Alvarez',
@@ -144,7 +165,8 @@ function buildCatalog() {
     id,
     code: id,
     name,
-    group: GROUPS[Math.floor(index / 4)],
+    group: TEAM_GROUPS[id].group,
+    groupPosition: TEAM_GROUPS[id].groupPosition,
     flagUrl: `https://flagcdn.com/w80/${flagCode}.png`
   }));
 

@@ -54,6 +54,27 @@ RAW_TEAMS = [
     ("CUW", "Curazao", "cw"),
 ]
 
+FIFA_GROUPS = {
+    "A": ["MEX", "RSA", "KOR", "CZE"],
+    "B": ["CAN", "BIH", "QAT", "SUI"],
+    "C": ["BRA", "MAR", "HAI", "SCO"],
+    "D": ["USA", "PAR", "AUS", "TUR"],
+    "E": ["GER", "CUW", "CIV", "ECU"],
+    "F": ["NED", "JPN", "SWE", "TUN"],
+    "G": ["BEL", "EGY", "IRN", "NZL"],
+    "H": ["ESP", "CPV", "KSA", "URU"],
+    "I": ["FRA", "SEN", "IRQ", "NOR"],
+    "J": ["ARG", "ALG", "AUT", "JOR"],
+    "K": ["POR", "COD", "UZB", "COL"],
+    "L": ["ENG", "CRO", "GHA", "PAN"],
+}
+
+TEAM_GROUPS = {
+    team_id: {"group": group, "groupPosition": group_position}
+    for group, team_ids in FIFA_GROUPS.items()
+    for group_position, team_id in enumerate(team_ids)
+}
+
 STAR_PLAYERS = {
     "ARG": "Lionel Messi",
     "FRA": "Kylian Mbappe",
@@ -98,7 +119,8 @@ def build_catalog() -> dict:
             "id": team_id,
             "code": team_id,
             "name": name,
-            "group": GROUPS[index // 4],
+            "group": TEAM_GROUPS[team_id]["group"],
+            "groupPosition": TEAM_GROUPS[team_id]["groupPosition"],
             "flagUrl": f"https://flagcdn.com/w80/{flag_code}.png",
         }
         for index, (team_id, name, flag_code) in enumerate(RAW_TEAMS)

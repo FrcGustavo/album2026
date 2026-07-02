@@ -45,7 +45,9 @@ export function Countries({ countryStats }) {
         </Select>
       </Toolbar>
       {GROUPS.map((group) => {
-        const teams = visible.filter((team) => team.group === group);
+        const teams = visible
+          .filter((team) => team.group === group)
+          .sort((a, b) => a.groupPosition - b.groupPosition);
         if (!teams.length) return null;
         return (
           <section className="group-section" key={group}>

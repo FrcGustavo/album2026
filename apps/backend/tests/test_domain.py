@@ -9,7 +9,7 @@ from app.domain.album import (
     remove_purchase,
     sanitize_state,
 )
-from app.domain.catalog import catalog, sticker_by_code, team_by_id
+from app.domain.catalog import FIFA_GROUPS, catalog, sticker_by_code, team_by_id
 
 
 def test_catalog_includes_bosnia_and_herzegovina():
@@ -28,6 +28,14 @@ def test_catalog_includes_panama():
     assert team_by_id["PAN"]["name"] == "Panama"
     assert sticker_by_code["PAN1"]["title"] == "Escudo Panama"
     assert len(catalog["stickers"]) == 980
+
+
+def test_catalog_uses_fifa_draw_groups():
+    group_a = sorted([team for team in catalog["teams"] if team["group"] == "A"], key=lambda team: team["groupPosition"])
+
+    assert [team["id"] for team in group_a] == ["MEX", "RSA", "KOR", "CZE"]
+    assert all(len(team_ids) == 4 for team_ids in FIFA_GROUPS.values())
+    assert len({team_id for team_ids in FIFA_GROUPS.values() for team_id in team_ids}) == 48
 
 
 def test_increment_decrement_and_repeated():

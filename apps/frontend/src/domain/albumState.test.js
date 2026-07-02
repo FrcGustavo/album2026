@@ -6,7 +6,7 @@ import {
   sanitizeState,
   setStickerCopies
 } from './albumState.js';
-import { catalog, stickerByCode, teamById } from './catalog.js';
+import { catalog, FIFA_GROUPS, stickerByCode, teamById } from './catalog.js';
 
 describe('albumState domain', () => {
   it('creates the canonical empty state', () => {
@@ -57,6 +57,17 @@ describe('albumState domain', () => {
       title: 'Escudo Panama'
     });
     expect(catalog.stickers).toHaveLength(980);
+  });
+
+  it('uses the FIFA draw groups instead of catalog insertion order', () => {
+    const groupA = catalog.teams
+      .filter((team) => team.group === 'A')
+      .sort((a, b) => a.groupPosition - b.groupPosition)
+      .map((team) => team.id);
+
+    expect(groupA).toEqual(['MEX', 'RSA', 'KOR', 'CZE']);
+    expect(Object.values(FIFA_GROUPS).every((teamIds) => teamIds.length === 4)).toBe(true);
+    expect(new Set(Object.values(FIFA_GROUPS).flat()).size).toBe(48);
   });
 
   it('sanitizes unknown codes and normalizes copy counts', () => {
