@@ -254,22 +254,26 @@ h2 {
 }
 
 .auth-shell {
+  width: 100%;
   min-height: 100vh;
+  margin: 0;
+  padding: 0;
   display: grid;
   align-items: center;
 }
 
 .auth-layout {
+  min-height: 100vh;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
-  gap: 18px;
+  grid-template-columns: minmax(0, 1.35fr) minmax(360px, 0.85fr);
+  gap: 0;
   align-items: stretch;
 }
 
 .auth-hero {
-  min-height: 520px;
-  padding: 28px;
-  border-radius: 8px;
+  min-height: 100vh;
+  padding: clamp(28px, 5vw, 72px);
+  border-radius: 0;
   color: #fff;
   background:
     linear-gradient(90deg, rgba(5, 17, 15, 0.78) 0%, rgba(5, 17, 15, 0.48) 58%, rgba(5, 17, 15, 0.2) 100%),
@@ -281,17 +285,43 @@ h2 {
 .auth-card {
   align-self: stretch;
   display: grid;
+  grid-template-rows: auto auto;
   align-content: center;
-  border-radius: 8px;
+  justify-items: center;
+  padding: clamp(32px, 5vw, 76px);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.auth-card > div {
+  width: min(100%, 440px);
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.auth-card-content {
+  display: grid;
+}
+
+.auth-title {
+  color: var(--cover-green-dark);
+  font-size: clamp(1.25rem, 2.4vw, 1.8rem);
+  line-height: 1.05;
+  font-weight: 900;
 }
 
 .auth-form {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 14px;
 }
 
 .auth-actions {
+  margin-top: clamp(18px, 4vh, 44px);
+  align-self: end;
   display: grid;
+  width: 100%;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
@@ -511,7 +541,12 @@ h2 {
 
 .cost-form-actions {
   display: grid;
-  align-self: end;
+  align-self: start;
+  padding-top: 25px;
+}
+
+.cost-form-actions button {
+  width: 100%;
 }
 
 .cracks-view {
@@ -979,6 +1014,17 @@ h2 {
   padding: 12px;
 }
 
+.history-item-main {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.history-item-main strong,
+.history-item-main span {
+  display: block;
+}
+
 .country-row {
   grid-template-columns: 42px minmax(120px, 1fr) minmax(120px, 0.8fr) auto auto auto;
   padding: 10px 0;
@@ -1132,6 +1178,22 @@ h2 {
     grid-template-columns: 1fr;
   }
 
+  .auth-shell {
+    min-height: auto;
+  }
+
+  .auth-layout {
+    min-height: 100vh;
+  }
+
+  .auth-hero {
+    min-height: 360px;
+  }
+
+  .auth-card {
+    min-height: 520px;
+  }
+
   .inline-form,
   .crack-form,
   .cost-form,
@@ -1144,6 +1206,10 @@ h2 {
 
   .cost-field-wide {
     grid-column: auto;
+  }
+
+  .cost-form-actions {
+    padding-top: 0;
   }
 
   .stats-top-card,
@@ -1224,7 +1290,6 @@ h2 {
   }
 
   .auth-hero {
-    min-height: 420px;
     padding: 20px;
   }
 

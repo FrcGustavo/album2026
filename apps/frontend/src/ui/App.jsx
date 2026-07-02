@@ -31,10 +31,10 @@ const ROUTE_TABS = [
   ['configuracion', '/configuracion', 'Configuracion']
 ];
 
-export function App() {
+export function App({ createAlbumRepository, tokenStorage }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const auth = useAuthSession();
+  const auth = useAuthSession({ createAlbumRepository, tokenStorage });
   const album = useRemoteAlbumState(auth);
   const { token, user, notice, setNotice, authenticate, remoteAlbumRepository } = auth;
   const { state, patch, update, syncStatus, resetLocalState } = album;
@@ -142,7 +142,7 @@ function syncLabel(status, user) {
 }
 
 function AuthScreen({ onAuthenticate, syncStatus, notice }) {
-  const [mode, setMode] = useState('register');
+  const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
@@ -156,20 +156,16 @@ function AuthScreen({ onAuthenticate, syncStatus, notice }) {
 
   return (
     <section className="auth-layout">
-      <div className="auth-hero">
-        <div className="hero-title-block">
-          <p className="eyebrow">Album Panini Mundial 2026 - Mexico</p>
-        </div>
-      </div>
+      <div className="auth-hero" />
       <Card className="auth-card">
         <CardHeader>
-          <CardTitle>{isRegister ? 'Crear cuenta' : 'Iniciar sesion'}</CardTitle>
+          <CardTitle className="auth-title">{isRegister ? 'Crear cuenta' : 'Iniciar sesion'}</CardTitle>
           <CardDescription>
             {notice.endsWith('.') ? notice : `${notice}.`}
             {!isRegister && ' Si aun no tienes cuenta, primero crea una.'}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="auth-card-content">
           <form className="auth-form" onSubmit={submit}>
             <label className="settings-field">
               <span>Email</span>

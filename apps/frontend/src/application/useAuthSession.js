@@ -1,34 +1,39 @@
 import { useMemo, useState } from 'react';
-import { createRemoteAlbumRepository } from '../infrastructure/remoteAlbumRepository.js';
 
 const TOKEN_KEY = 'panini-world-cup-2026-mx-token';
 
-export function useAuthSession() {
-  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY) || '');
+const browserTokenStorage = {
+  getItem: (key) => globalThis.localStorage?.getItem(key),
+  setItem: (key, value) => globalThis.localStorage?.setItem(key, value),
+  removeItem: (key) => globalThis.localStorage?.removeItem(key)
+};
+
+export function useAuthSession({ createAlbumRepository, tokenStorage = browserTokenStorage } = {}) {
+  const [token, setToken] = useState(() => tokenStorage.getItem(TOKEN_KEY) || '');
   const [user, setUser] = useState(null);
-  const [notice, setNotice] = useState('Inicia sesion para cargar tu album desde la base de datos.');
+  const [notice, setNotice] = useState('Accede para continuar con tu album.');
   const [authStatus, setAuthStatus] = useState(token ? 'loading' : 'signed-out');
 
   const remoteAlbumRepository = useMemo(
     () =>
-      createRemoteAlbumRepository({
-        getToken: () => localStorage.getItem(TOKEN_KEY),
+      createAlbumRepository({
+        getToken: () => tokenStorage.getItem(TOKEN_KEY),
         onUnauthorized: () => {
-          localStorage.removeItem(TOKEN_KEY);
+          tokenStorage.removeItem(TOKEN_KEY);
           setToken('');
           setUser(null);
           setAuthStatus('signed-out');
           setNotice('Sesion expirada. Inicia sesion de nuevo.');
         }
       }),
-    []
+    [createAlbumRepository, tokenStorage]
   );
 
   async function authenticate(mode, payload) {
     setAuthStatus('loading');
     try {
       const session = mode === 'register' ? await remoteAlbumRepository.register(payload) : await remoteAlbumRepository.login(payload);
-      localStorage.setItem(TOKEN_KEY, session.access_token);
+      tokenStorage.setItem(TOKEN_KEY, session.access_token);
       setToken(session.access_token);
       setUser(session.user);
       setNotice(`Sesion iniciada para ${session.user.name}.`);
@@ -40,7 +45,7 @@ export function useAuthSession() {
   }
 
   function logout() {
-    localStorage.removeItem(TOKEN_KEY);
+    tokenStorage.removeItem(TOKEN_KEY);
     setToken('');
     setUser(null);
     setAuthStatus('signed-out');

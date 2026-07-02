@@ -20,17 +20,20 @@ export function createRemoteAlbumRepository({
     if (response.status === 401) onUnauthorized();
     if (!response.ok) {
       const message = await response.text();
-      let detail = message;
-      try {
-        const parsed = JSON.parse(message);
-        detail = parsed.detail || message;
-      } catch {
-        detail = message;
-      }
+      const detail = parseErrorDetail(message);
       throw new Error(detail || `HTTP ${response.status}`);
     }
     if (response.status === 204) return null;
     return response.json();
+  }
+
+  function parseErrorDetail(message) {
+    try {
+      const parsed = JSON.parse(message);
+      return parsed.detail || message;
+    } catch {
+      return message;
+    }
   }
 
   return {

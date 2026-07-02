@@ -131,7 +131,7 @@ export function Costs({ state, patch, costStats, albumStats }) {
         {state.purchases.length === 0 && <EmptyState text="Aun no registraste movimientos." />}
         {state.purchases.map((purchase) => (
           <article className="history-item" key={purchase.id}>
-            <div>
+            <div className="history-item-main">
               <strong>{purchaseLabel(purchase.type)}</strong>
               <span>{purchase.date} - {purchase.quantity} unidad(es) {purchase.notes ? `- ${purchase.notes}` : ''}</span>
             </div>
