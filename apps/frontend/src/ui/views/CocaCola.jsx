@@ -3,6 +3,7 @@ import { catalog } from '../../domain/catalog.js';
 import { EmptyState } from '../components/Layout.jsx';
 import { ProgressHero } from '../components/Progress.jsx';
 import { StickerTile } from '../components/StickerTile.jsx';
+import { Switch } from '@/components/ui/switch';
 
 export function CocaCola({ state, patch, albumStats }) {
   function toggleCocaCola() {
@@ -21,16 +22,11 @@ export function CocaCola({ state, patch, albumStats }) {
         </div>
         <div className="coca-toggle">
           <span className={`coca-toggle-status ${state.cocaColaEnabled ? 'active' : 'inactive'}`}>{state.cocaColaEnabled ? 'Activada' : 'Desactivada'}</span>
-          <button
-            type="button"
-            className={`coca-switch ${state.cocaColaEnabled ? 'active' : 'inactive'}`}
-            role="switch"
-            aria-checked={state.cocaColaEnabled}
+          <Switch
+            checked={state.cocaColaEnabled}
             aria-label="Activar seccion Coca-Cola"
-            onClick={toggleCocaCola}
-          >
-            <span className="coca-switch-thumb" aria-hidden="true" />
-          </button>
+            onCheckedChange={toggleCocaCola}
+          />
         </div>
       </article>
       <ProgressHero title="Progreso Coca-Cola" summary={albumStats.cocaCola} helper={state.cocaColaEnabled ? 'Activa' : 'Desactivada'} />

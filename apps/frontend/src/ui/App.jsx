@@ -18,6 +18,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const ROUTE_TABS = [
   ['inicio', '/', 'Inicio'],
@@ -98,22 +99,43 @@ export function App({ createAlbumRepository, tokenStorage }) {
         </div>
       </header>
 
-      <Tabs
-        value={activeTab}
-        onValueChange={(tab) => {
-          const nextPath = ROUTE_TABS.find(([id]) => id === tab)?.[1] || '/';
-          navigate(nextPath);
-        }}
-        className="tabs-shell"
-      >
-        <TabsList className="tabs-list" aria-label="Secciones">
-          {ROUTE_TABS.map(([id, , label]) => (
-            <TabsTrigger value={id} key={id}>
-              {label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      <nav className="section-nav" aria-label="Secciones">
+        <Select
+          value={activeTab}
+          onValueChange={(tab) => {
+            const nextPath = ROUTE_TABS.find(([id]) => id === tab)?.[1] || '/';
+            navigate(nextPath);
+          }}
+        >
+          <SelectTrigger className="mobile-section-select" aria-label="Seccion actual">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {ROUTE_TABS.map(([id, , label]) => (
+              <SelectItem value={id} key={id}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Tabs
+          value={activeTab}
+          onValueChange={(tab) => {
+            const nextPath = ROUTE_TABS.find(([id]) => id === tab)?.[1] || '/';
+            navigate(nextPath);
+          }}
+          className="tabs-shell"
+        >
+          <TabsList className="tabs-list">
+            {ROUTE_TABS.map(([id, , label]) => (
+              <TabsTrigger value={id} key={id}>
+                {label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      </nav>
 
       <Routes>
         <Route path="/" element={<Dashboard {...context} />} />
