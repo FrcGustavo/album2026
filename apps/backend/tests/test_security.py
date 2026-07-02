@@ -38,6 +38,17 @@ def test_production_requires_migrations_instead_of_auto_create():
         validate_settings(Settings(env="production", jwt_secret_key="test-secret", auto_create_tables=True))
 
 
+def test_production_allows_migrations_when_auto_create_is_disabled():
+    validate_settings(
+        Settings(
+            env="production",
+            jwt_secret_key="test-secret",
+            auto_create_tables=False,
+            cors_origins="https://album.example.com",
+        )
+    )
+
+
 def test_production_requires_cors_origins():
     with pytest.raises(ValueError):
         validate_settings(Settings(env="production", jwt_secret_key="test-secret", auto_create_tables=False))
