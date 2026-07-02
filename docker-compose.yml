@@ -17,6 +17,7 @@ services:
 
   backend:
     image: frcgustavo/album-backend:latest
+    platform: linux/amd64
     build:
       context: ./apps/backend
     environment:
@@ -33,6 +34,7 @@ services:
 
   frontend:
     image: frcgustavo/album-frontend:latest
+    platform: linux/amd64
     build:
       context: .
       dockerfile: apps/frontend/Dockerfile
