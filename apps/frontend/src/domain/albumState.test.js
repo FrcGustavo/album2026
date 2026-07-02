@@ -6,7 +6,7 @@ import {
   sanitizeState,
   setStickerCopies
 } from './albumState.js';
-import { stickerByCode } from './catalog.js';
+import { catalog, stickerByCode, teamById } from './catalog.js';
 
 describe('albumState domain', () => {
   it('creates the canonical empty state', () => {
@@ -18,6 +18,19 @@ describe('albumState domain', () => {
       customCracks: [],
       purchases: []
     });
+  });
+
+  it('includes Bosnia and Herzegovina in the 980-sticker base catalog', () => {
+    expect(teamById.BIH).toMatchObject({
+      code: 'BIH',
+      name: 'Bosnia y Herzegovina'
+    });
+    expect(stickerByCode.BIH1).toMatchObject({
+      code: 'BIH1',
+      teamId: 'BIH',
+      title: 'Escudo Bosnia y Herzegovina'
+    });
+    expect(catalog.stickers).toHaveLength(980);
   });
 
   it('sanitizes unknown codes and normalizes copy counts', () => {

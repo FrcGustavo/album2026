@@ -9,6 +9,13 @@ from app.domain.album import (
     remove_purchase,
     sanitize_state,
 )
+from app.domain.catalog import catalog, sticker_by_code, team_by_id
+
+
+def test_catalog_includes_bosnia_and_herzegovina():
+    assert team_by_id["BIH"]["name"] == "Bosnia y Herzegovina"
+    assert sticker_by_code["BIH1"]["title"] == "Escudo Bosnia y Herzegovina"
+    assert len(catalog["stickers"]) == 980
 
 
 def test_increment_decrement_and_repeated():

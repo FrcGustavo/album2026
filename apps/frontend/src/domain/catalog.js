@@ -47,7 +47,7 @@ const RAW_TEAMS = [
   ['CZE', 'Republica Checa', 'cz'],
   ['DEN', 'Dinamarca', 'dk'],
   ['SWE', 'Suecia', 'se'],
-  ['SRB', 'Serbia', 'rs'],
+  ['BIH', 'Bosnia y Herzegovina', 'ba'],
   ['HAI', 'Haiti', 'ht'],
   ['CUW', 'Curazao', 'cw']
 ];
@@ -98,7 +98,7 @@ export const STAR_PLAYERS = {
   CZE: 'Patrik Schick',
   DEN: 'Christian Eriksen',
   SWE: 'Viktor Gyokeres',
-  SRB: 'Dusan Vlahovic',
+  BIH: 'Edin Dzeko',
   HAI: 'Duckens Nazon',
   CUW: 'Leandro Bacuna'
 };

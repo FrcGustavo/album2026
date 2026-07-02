@@ -49,7 +49,7 @@ RAW_TEAMS = [
     ("CZE", "Republica Checa", "cz"),
     ("DEN", "Dinamarca", "dk"),
     ("SWE", "Suecia", "se"),
-    ("SRB", "Serbia", "rs"),
+    ("BIH", "Bosnia y Herzegovina", "ba"),
     ("HAI", "Haiti", "ht"),
     ("CUW", "Curazao", "cw"),
 ]
@@ -67,6 +67,7 @@ STAR_PLAYERS = {
     "GER": "Joshua Kimmich",
     "URU": "Federico Valverde",
     "NED": "Virgil van Dijk",
+    "BIH": "Edin Dzeko",
 }
 
 PLAYER_NAMES = [
