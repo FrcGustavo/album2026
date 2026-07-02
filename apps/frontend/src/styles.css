@@ -1401,6 +1401,32 @@ h2 {
     padding-left: 0;
   }
 
+  .stats-top-card > div {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .stats-top-card .ranking-list,
+  .dashboard-top-grid .ranking-list,
+  .table-list {
+    gap: 12px;
+  }
+
+  .stats-top-card .country-row,
+  .dashboard-top-grid .country-row,
+  .table-list .country-row {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--paper);
+    padding: 12px;
+  }
+
+  .stats-top-card .country-row:last-child,
+  .dashboard-top-grid .country-row:last-child,
+  .table-list .country-row:last-child {
+    border-bottom: 1px solid var(--border);
+  }
+
   .entry-row,
   .settings-actions,
   .auth-actions {
