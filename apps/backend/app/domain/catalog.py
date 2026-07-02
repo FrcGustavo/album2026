@@ -29,7 +29,7 @@ RAW_TEAMS = [
     ("RSA", "Sudafrica", "za"),
     ("SEN", "Senegal", "sn"),
     ("CIV", "Costa de Marfil", "ci"),
-    ("NGA", "Nigeria", "ng"),
+    ("COD", "Congo RD", "cd"),
     ("QAT", "Qatar", "qa"),
     ("KSA", "Arabia Saudita", "sa"),
     ("IRQ", "Irak", "iq"),

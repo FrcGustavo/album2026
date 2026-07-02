@@ -18,6 +18,12 @@ def test_catalog_includes_bosnia_and_herzegovina():
     assert len(catalog["stickers"]) == 980
 
 
+def test_catalog_includes_dr_congo():
+    assert team_by_id["COD"]["name"] == "Congo RD"
+    assert sticker_by_code["COD1"]["title"] == "Escudo Congo RD"
+    assert len(catalog["stickers"]) == 980
+
+
 def test_increment_decrement_and_repeated():
     state = empty_state()
     state = increment_sticker(state, "MEX1")

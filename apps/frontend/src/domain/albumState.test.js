@@ -33,6 +33,19 @@ describe('albumState domain', () => {
     expect(catalog.stickers).toHaveLength(980);
   });
 
+  it('includes DR Congo in the 980-sticker base catalog', () => {
+    expect(teamById.COD).toMatchObject({
+      code: 'COD',
+      name: 'Congo RD'
+    });
+    expect(stickerByCode.COD1).toMatchObject({
+      code: 'COD1',
+      teamId: 'COD',
+      title: 'Escudo Congo RD'
+    });
+    expect(catalog.stickers).toHaveLength(980);
+  });
+
   it('sanitizes unknown codes and normalizes copy counts', () => {
     const state = sanitizeState({
       stickers: { MEX1: '2', NOPE: 3, MEX2: -1 },
