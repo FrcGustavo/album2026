@@ -1,9 +1,7 @@
 import { sanitizeState } from '../domain/albumState.js';
 
 function defaultApiBaseUrl() {
-  const hostname = globalThis.location?.hostname;
-  if (hostname === 'localhost' || hostname === '127.0.0.1') return `http://${hostname}:8000/api`;
-  return 'http://127.0.0.1:8000/api';
+  return '/api';
 }
 
 export function createRemoteAlbumRepository({

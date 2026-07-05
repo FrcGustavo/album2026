@@ -224,7 +224,7 @@ export function App({ createAlbumRepository, tokenStorage }) {
 
 function syncLabel(status, user) {
   if (!user) return 'Sin sesión';
-  if (status === 'synced') return `Cambios guardados: ${user.name}`;
+  if (status === 'synced') return user.name;
   if (status === 'saving') return `Guardando cambios: ${user.name}`;
   if (status === 'loading') return 'Cargando tu álbum';
   if (status === 'conflict') return 'Conflicto de sincronización';

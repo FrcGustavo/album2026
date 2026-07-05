@@ -59,14 +59,14 @@ describe('remoteAlbumRepository', () => {
     );
   });
 
-  it('uses the current localhost hostname for the default API URL', async () => {
+  it('uses a same-origin API URL by default', async () => {
     vi.stubGlobal('location', { hostname: 'localhost' });
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse({ id: 1, name: 'Gus' }));
     const repository = createRemoteAlbumRepository();
 
     await repository.getMe();
 
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8000/api/auth/me', expect.any(Object));
+    expect(fetchMock).toHaveBeenCalledWith('/api/auth/me', expect.any(Object));
     vi.unstubAllGlobals();
   });
 });
