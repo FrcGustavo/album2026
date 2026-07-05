@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   emptyState,
   getAlbumStats,
+  getCostSummaryByType,
   getCostStats,
+  getImportPreview,
+  getMissingStickers,
+  getMonthlyCostSummary,
+  getRepeatedStickers,
   sanitizeState,
   setStickerCopies
 } from './albumState.js';
@@ -16,7 +21,8 @@ describe('albumState domain', () => {
       specials: {},
       cocaCola: {},
       customCracks: [],
-      purchases: []
+      purchases: [],
+      activityLog: []
     });
   });
 
@@ -49,12 +55,12 @@ describe('albumState domain', () => {
   it('includes Panama in the 980-sticker base catalog', () => {
     expect(teamById.PAN).toMatchObject({
       code: 'PAN',
-      name: 'Panama'
+      name: 'Panamá'
     });
     expect(stickerByCode.PAN1).toMatchObject({
       code: 'PAN1',
       teamId: 'PAN',
-      title: 'Escudo Panama'
+      title: 'Escudo Panamá'
     });
     expect(catalog.stickers).toHaveLength(980);
   });
@@ -141,5 +147,41 @@ describe('albumState domain', () => {
       packs: 10,
       estimatedStickers: 70
     });
+  });
+
+  it('summarizes purchase costs by month and type', () => {
+    const state = sanitizeState({
+      purchases: [
+        { type: 'box', date: '2026-07-01', price: 100, source: 'Oxxo' },
+        { type: 'income', date: '2026-07-02', price: 25 },
+        { type: 'pack', date: '2026-08-01', price: 40 }
+      ]
+    });
+
+    expect(getMonthlyCostSummary(state)['2026-07']).toMatchObject({ spent: 100, income: 25, net: 75 });
+    expect(getCostSummaryByType(state).box).toMatchObject({ spent: 100, income: 0, net: 100 });
+    expect(state.purchases[0].source).toBe('Oxxo');
+  });
+
+  it('reports missing and repeated sticker lists', () => {
+    const state = setStickerCopies(emptyState(), stickerByCode.MEX1, 3);
+
+    expect(getRepeatedStickers(state)[0]).toMatchObject({ sticker: stickerByCode.MEX1, extraCopies: 2 });
+    expect(getMissingStickers(state).some((sticker) => sticker.code === 'MEX2')).toBe(true);
+  });
+
+  it('builds import previews from wrapped backups', () => {
+    const preview = getImportPreview({ state: { stickers: { MEX1: 2 }, customCracks: [], purchases: [{ type: 'pack', price: 20 }] } });
+
+    expect(preview).toMatchObject({ owned: 1, repeated: 1, purchases: 1 });
+  });
+
+  it('normalizes legacy activity log dates and infers sticker codes', () => {
+    const state = sanitizeState({
+      activityLog: [{ type: 'stickers', message: 'Agregaste MEX1.' }]
+    });
+
+    expect(state.activityLog[0]).toMatchObject({ stickerCode: 'MEX1' });
+    expect(Number.isNaN(new Date(state.activityLog[0].createdAt).getTime())).toBe(false);
   });
 });

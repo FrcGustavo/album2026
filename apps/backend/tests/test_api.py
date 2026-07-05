@@ -28,6 +28,7 @@ def register(client, email="gus@example.com", name="Gus", password="supersecret"
     payload = response.json()
     assert payload["access_token"]
     assert payload["token_type"] == "bearer"
+    assert "album_access_token" in response.cookies
     return payload
 
 
@@ -51,6 +52,12 @@ def test_auth_register_login_and_me(tmp_path):
     assert me.status_code == 200
     assert me.json()["name"] == "Gus"
     assert "password_hash" not in me.json()
+    cookie_me = client.get("/api/auth/me")
+    assert cookie_me.status_code == 200
+    assert cookie_me.json()["email"] == "gus@example.com"
+
+    logout = client.post("/api/auth/logout")
+    assert logout.status_code == 204
 
     bad_login = client.post("/api/auth/login", json={"email": "gus@example.com", "password": "wrongwrong"})
     assert bad_login.status_code == 401
@@ -60,14 +67,33 @@ def test_authenticated_album_roundtrip(tmp_path):
     client = make_client(tmp_path)
     token = register(client)["access_token"]
 
-    assert client.get("/api/me/album").status_code == 401
+    anonymous = make_client(tmp_path)
+    assert anonymous.get("/api/me/album").status_code == 401
 
     album = client.get("/api/me/album", headers=auth_headers(token)).json()
     album["stickers"]["MEX1"] = 2
-    saved = client.put("/api/me/album", json=album, headers=auth_headers(token)).json()
+    response = client.put("/api/me/album", json=album, headers=auth_headers(token))
+    saved = response.json()
 
     assert saved["stickers"]["MEX1"] == 2
+    assert response.headers["X-Album-Revision"]
+    assert response.headers["ETag"]
     assert client.get("/api/me/album", headers=auth_headers(token)).json()["stickers"]["MEX1"] == 2
+
+
+def test_album_revision_conflicts(tmp_path):
+    client = make_client(tmp_path)
+    token = register(client)["access_token"]
+    headers = auth_headers(token)
+    loaded = client.get("/api/me/album", headers=headers)
+    revision = loaded.headers["X-Album-Revision"]
+    album = loaded.json()
+    album["stickers"]["MEX1"] = 1
+
+    first = client.put("/api/me/album", json=album, headers={**headers, "If-Match": f'"{revision}"'})
+    assert first.status_code == 200
+    stale = client.put("/api/me/album", json=album, headers={**headers, "If-Match": f'"{revision}"'})
+    assert stale.status_code == 409
 
 
 def test_album_actions(tmp_path):
@@ -85,14 +111,17 @@ def test_album_actions(tmp_path):
     assert len(crack_album["customCracks"]) == 1
     purchase_album = client.post("/api/me/album/purchases", json={"type": "pack", "quantity": 2, "price": 30}, headers=headers).json()
     assert len(purchase_album["purchases"]) == 1
+    assert client.post("/api/me/album/import", json={"state": {"purchases": [{"type": "pack", "price": 20, "source": "Oxxo"}]}}, headers=headers).json()["purchases"][0]["source"] == "Oxxo"
     stats = client.get("/api/me/album/stats", headers=headers).json()
-    assert stats["costs"]["spent"] == 30
+    assert stats["costs"]["spent"] == 20
 
 
 def test_users_do_not_share_album_state(tmp_path):
     client = make_client(tmp_path)
     gus_token = register(client, email="gus@example.com", name="Gus")["access_token"]
+    client.post("/api/auth/logout")
     ana_token = register(client, email="ana@example.com", name="Ana")["access_token"]
+    client.post("/api/auth/logout")
 
     album = client.get("/api/me/album", headers=auth_headers(gus_token)).json()
     album["stickers"]["MEX1"] = 3
