@@ -3,23 +3,23 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class RegisterRequest(BaseModel):
-    email: str = Field(min_length=3, max_length=320, examples=["gus@example.com"])
+    email: EmailStr = Field(examples=["gus@example.com"])
     name: str = Field(min_length=1, max_length=160)
     password: str = Field(min_length=8, max_length=128)
 
 
 class LoginRequest(BaseModel):
-    email: str = Field(min_length=3, max_length=320, examples=["gus@example.com"])
+    email: EmailStr = Field(examples=["gus@example.com"])
     password: str = Field(min_length=8, max_length=128)
 
 
 class UserOut(BaseModel):
     id: int
-    email: str
+    email: EmailStr
     name: str
     created_at: datetime
     updated_at: datetime
@@ -41,6 +41,16 @@ class AlbumState(BaseModel):
     cocaCola: dict[str, int] = Field(default_factory=dict)
     customCracks: list[dict[str, Any]] = Field(default_factory=list)
     purchases: list[dict[str, Any]] = Field(default_factory=list)
+    activityLog: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class AlbumImportRequest(BaseModel):
+    app: Optional[str] = None
+    version: Optional[int] = None
+    exportedAt: Optional[str] = None
+    state: Optional[AlbumState] = None
+
+    model_config = ConfigDict(extra="allow")
 
 
 class CocaColaPatch(BaseModel):
@@ -61,3 +71,4 @@ class PurchaseCreate(BaseModel):
     packsPerBox: float = 0
     stickersPerPack: float = 7
     notes: str = ""
+    source: str = ""

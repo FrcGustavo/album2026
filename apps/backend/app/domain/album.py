@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from datetime import date
+from datetime import date, datetime, timezone
+import re
 from typing import Any
 from uuid import uuid4
 
@@ -17,6 +18,7 @@ def empty_state() -> dict[str, Any]:
         "cocaCola": {},
         "customCracks": [],
         "purchases": [],
+        "activityLog": [],
     }
 
 
@@ -76,10 +78,22 @@ def sanitize_state(value: Any) -> dict[str, Any]:
             "packsPerBox": float(purchase.get("packsPerBox") or 0),
             "stickersPerPack": float(purchase.get("stickersPerPack") or 7),
             "notes": str(purchase.get("notes") or ""),
+            "source": str(purchase.get("source") or ""),
         }
         for purchase in value.get("purchases") or []
         if isinstance(purchase, dict) and purchase.get("type") and _is_number(purchase.get("price"))
     ]
+    next_state["activityLog"] = [
+        {
+            "id": str(entry.get("id") or uuid4()),
+            "type": str(entry.get("type") or "change"),
+            "message": str(entry.get("message") or ""),
+            "stickerCode": str(entry.get("stickerCode") or _infer_sticker_code(entry.get("message")) or ""),
+            "createdAt": _normalize_activity_date(entry.get("createdAt")),
+        }
+        for entry in (value.get("activityLog") or [])[:50]
+        if isinstance(entry, dict) and entry.get("message")
+    ][:50]
     return next_state
 
 
@@ -279,3 +293,18 @@ def _is_number(value: Any) -> bool:
     except (TypeError, ValueError):
         return False
     return True
+
+
+def _normalize_activity_date(value: Any) -> str:
+    if value:
+        try:
+            parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+            return parsed.astimezone(timezone.utc).isoformat()
+        except ValueError:
+            pass
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _infer_sticker_code(message: Any) -> str | None:
+    match = re.search(r"\b(?:[A-Z]{2,3}\d{1,2}|FWC\d{1,2}|CC\d{1,2}|00)\b", str(message or ""))
+    return match.group(0) if match else None

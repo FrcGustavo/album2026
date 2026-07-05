@@ -13,12 +13,18 @@ class Settings(BaseSettings):
     jwt_algorithm: str = Field(default="HS256")
     access_token_expire_minutes: int = Field(default=1440)
     cors_origins: str = Field(default="")
+    cookie_name: str = Field(default="album_access_token")
+    cookie_samesite: str = Field(default="lax")
 
     model_config = SettingsConfigDict(env_prefix="ALBUM_")
 
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @property
+    def secure_cookies(self) -> bool:
+        return self.env.lower() == "production"
 
 
 @lru_cache

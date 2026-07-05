@@ -37,6 +37,13 @@ class UserAuthRecord:
     updated_at: datetime
 
 
+@dataclass(frozen=True)
+class AlbumRecord:
+    state: dict
+    revision: int
+    updated_at: datetime
+
+
 class UserRepository(Protocol):
     def get(self, user_id: int) -> User | None: ...
     def get_auth_by_email(self, email: str) -> UserAuthRecord | None: ...
@@ -44,8 +51,8 @@ class UserRepository(Protocol):
 
 
 class AlbumRepository(Protocol):
-    def get_by_user_id(self, user_id: int) -> dict | None: ...
-    def save_for_user_id(self, user_id: int, state: dict) -> dict: ...
+    def get_by_user_id(self, user_id: int) -> AlbumRecord | None: ...
+    def save_for_user_id(self, user_id: int, state: dict, expected_revision: int | None = None) -> AlbumRecord: ...
 
 
 class UserService:
@@ -84,16 +91,19 @@ class AlbumService:
         self.users = users
         self.albums = albums
 
-    def get_album(self, user_id: int) -> dict:
+    def get_album_record(self, user_id: int) -> AlbumRecord:
         self._ensure_user(user_id)
-        state = self.albums.get_by_user_id(user_id)
-        if state is None:
+        record = self.albums.get_by_user_id(user_id)
+        if record is None:
             return self.albums.save_for_user_id(user_id, empty_state())
-        return sanitize_state(state)
+        return AlbumRecord(state=sanitize_state(record.state), revision=record.revision, updated_at=record.updated_at)
 
-    def replace_album(self, user_id: int, state: dict) -> dict:
+    def get_album(self, user_id: int) -> dict:
+        return self.get_album_record(user_id).state
+
+    def replace_album(self, user_id: int, state: dict, expected_revision: int | None = None) -> dict:
         self._ensure_user(user_id)
-        return self.albums.save_for_user_id(user_id, sanitize_state(state))
+        return self.albums.save_for_user_id(user_id, sanitize_state(state), expected_revision=expected_revision).state
 
     def increment(self, user_id: int, code: str) -> dict:
         return self.replace_album(user_id, increment_sticker(self.get_album(user_id), code))

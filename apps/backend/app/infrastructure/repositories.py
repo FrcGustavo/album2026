@@ -5,7 +5,7 @@ import json
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.application.services import User, UserAuthRecord
+from app.application.services import AlbumRecord, User, UserAuthRecord
 from app.domain.album import empty_state, sanitize_state
 from app.infrastructure.database import AlbumStateModel, UserModel
 
@@ -55,22 +55,27 @@ class SqlAlchemyAlbumRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    def get_by_user_id(self, user_id: int) -> dict | None:
+    def get_by_user_id(self, user_id: int) -> AlbumRecord | None:
         model = self.session.scalar(select(AlbumStateModel).where(AlbumStateModel.user_id == user_id))
         if model is None:
             return None
         try:
-            return sanitize_state(json.loads(model.state_json))
+            state = sanitize_state(json.loads(model.state_json))
         except json.JSONDecodeError:
-            return empty_state()
+            state = empty_state()
+        return AlbumRecord(state=state, revision=model.revision, updated_at=model.updated_at)
 
-    def save_for_user_id(self, user_id: int, state: dict) -> dict:
+    def save_for_user_id(self, user_id: int, state: dict, expected_revision: int | None = None) -> AlbumRecord:
         clean = sanitize_state(state)
         model = self.session.scalar(select(AlbumStateModel).where(AlbumStateModel.user_id == user_id))
         if model is None:
             model = AlbumStateModel(user_id=user_id, state_json=json.dumps(clean))
             self.session.add(model)
         else:
+            if expected_revision is not None and model.revision != expected_revision:
+                raise RuntimeError("album_revision_conflict")
             model.state_json = json.dumps(clean)
+            model.revision += 1
         self.session.commit()
-        return clean
+        self.session.refresh(model)
+        return AlbumRecord(state=clean, revision=model.revision, updated_at=model.updated_at)

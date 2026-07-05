@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Generator, Optional
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, create_engine, func, inspect, text
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, create_engine, func, inspect, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
 
 from app.config import get_settings
@@ -31,6 +31,7 @@ class AlbumStateModel(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True, index=True)
     state_json: Mapped[str] = mapped_column(Text)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
     user: Mapped[UserModel] = relationship(back_populates="album_state")
@@ -60,6 +61,9 @@ def _ensure_auth_columns() -> None:
         statements.append("ALTER TABLE users ADD COLUMN email VARCHAR(320)")
     if "password_hash" not in columns:
         statements.append("ALTER TABLE users ADD COLUMN password_hash VARCHAR(255)")
+    album_columns = {column["name"] for column in inspector.get_columns("album_states")} if inspector.has_table("album_states") else set()
+    if "revision" not in album_columns:
+        statements.append("ALTER TABLE album_states ADD COLUMN revision INTEGER NOT NULL DEFAULT 1")
     if not statements:
         return
     with engine.begin() as connection:
