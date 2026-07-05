@@ -7,7 +7,7 @@ export function Specials({ state, patch, albumStats }) {
   return (
     <section className="view-stack">
       <ProgressHero title="Figuritas Especiales" summary={albumStats.specials} helper="00 + FWC1 a FWC19" />
-      <div className="sticker-tile-grid wide">
+      <div className="sticker-tile-grid showcase-grid">
         {catalog.specials.map((sticker) => (
           <StickerTile key={sticker.code} sticker={sticker} state={state} patch={patch} />
         ))}

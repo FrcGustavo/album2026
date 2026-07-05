@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { GROUPS } from '../../domain/catalog.js';
 import { getTeamStickers } from '../../domain/albumState.js';
+import { includesSearch } from '../../domain/text.js';
 import { CountryCard } from '../components/Country.jsx';
-import { Toolbar } from '../components/Layout.jsx';
+import { EmptyState, Toolbar } from '../components/Layout.jsx';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function Countries({ countryStats }) {
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
-  const normalized = query.trim().toLowerCase();
   const visible = countryStats.filter((team) => {
     const match =
-      !normalized ||
-      team.name.toLowerCase().includes(normalized) ||
-      team.code.toLowerCase().includes(normalized) ||
-      getTeamStickers(team.id).some((sticker) => sticker.code.toLowerCase().includes(normalized));
+      !query ||
+      includesSearch(team.name, query) ||
+      includesSearch(team.code, query) ||
+      getTeamStickers(team.id).some((sticker) => includesSearch(sticker.code, query) || includesSearch(sticker.title, query));
     const filterMatch =
       filter === 'all' ||
       (filter === 'missing' && team.missing > 0) ||
@@ -29,7 +31,7 @@ export function Countries({ countryStats }) {
   return (
     <section className="view-stack">
       <Toolbar>
-        <Input value={query} placeholder="Buscar por pais, codigo o figurita" onChange={(event) => setQuery(event.target.value)} />
+        <Input value={query} placeholder="Buscar por país, código o figurita" onChange={(event) => setQuery(event.target.value)} />
         <Select value={filter} onValueChange={setFilter}>
           <SelectTrigger aria-label="Filtro de selecciones">
             <SelectValue />
@@ -44,6 +46,7 @@ export function Countries({ countryStats }) {
           </SelectContent>
         </Select>
       </Toolbar>
+      {!visible.length && <EmptyState text="No hay selecciones que coincidan con este filtro." />}
       {GROUPS.map((group) => {
         const teams = visible
           .filter((team) => team.group === group)
@@ -54,7 +57,9 @@ export function Countries({ countryStats }) {
             <h2>Grupo {group}</h2>
             <div className="country-grid countries-card-grid">
               {teams.map((team) => (
-                <CountryCard key={team.id} team={team} />
+                <button type="button" className="country-card-button" onClick={() => navigate(`/album?team=${team.code}`)}>
+                  <CountryCard key={team.id} team={team} />
+                </button>
               ))}
             </div>
           </section>

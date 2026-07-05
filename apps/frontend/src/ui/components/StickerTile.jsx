@@ -1,14 +1,20 @@
 import React from 'react';
-import { copiesFor, getCracks, setStickerCopies } from '../../domain/albumState.js';
+import { Minus, Plus } from 'lucide-react';
+import { appendActivity, copiesFor, getCracks, setStickerCopies } from '../../domain/albumState.js';
+import { Button } from '@/components/ui/button';
 
 export function StickerTile({ sticker, state, patch }) {
   const copies = copiesFor(state, sticker);
   const crack = getCracks(state).find((item) => item.stickerCode === sticker.code);
   const className = copies > 2 ? 'many' : copies > 1 ? 'duplicate' : copies > 0 ? 'owned' : 'missing';
   const playerName = crack?.player || (sticker.type === 'jugador' ? 'Jugador por confirmar' : '');
+  const stateLabel = copies > 1 ? `${copies}x` : copies === 1 ? 'OK' : 'Falta';
 
   function change(delta) {
-    patch((current) => setStickerCopies(current, sticker, Math.max(0, copiesFor(current, sticker) + delta)));
+    patch((current) => {
+      const nextCopies = Math.max(0, copiesFor(current, sticker) + delta);
+      return appendActivity(setStickerCopies(current, sticker, nextCopies), 'stickers', `${delta > 0 ? 'Agregaste' : 'Restaste'} ${sticker.code}.`, { stickerCode: sticker.code });
+    });
   }
 
   function handleKeyDown(event) {
@@ -25,10 +31,7 @@ export function StickerTile({ sticker, state, patch }) {
       aria-label={`Agregar copia de ${sticker.code}`}
       tabIndex={0}
       onClick={() => change(1)}
-      onContextMenu={(event) => {
-        event.preventDefault();
-        change(-1);
-      }}
+      onContextMenu={(event) => event.preventDefault()}
       onKeyDown={handleKeyDown}
     >
       <div className="sticker-tile-header">
@@ -36,10 +39,12 @@ export function StickerTile({ sticker, state, patch }) {
       </div>
       <p className="sticker-tile-player">{playerName}</p>
       <div className="sticker-tile-footer">
-        <span>{copies > 1 ? `${copies}x` : copies === 1 ? 'OK' : 'Falta'}</span>
-        <button
+        <span>{stateLabel}</span>
+        <div className="sticker-controls">
+        <Button
           type="button"
-          className="sticker-tile-minus"
+          variant="outline"
+          size="icon"
           aria-label={`Restar ${sticker.code}`}
           onClick={(event) => {
             event.stopPropagation();
@@ -50,8 +55,21 @@ export function StickerTile({ sticker, state, patch }) {
             event.stopPropagation();
           }}
         >
-          -
-        </button>
+          <Minus aria-hidden="true" />
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          aria-label={`Sumar ${sticker.code}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            change(1);
+          }}
+        >
+          <Plus aria-hidden="true" />
+        </Button>
+        </div>
       </div>
     </article>
   );

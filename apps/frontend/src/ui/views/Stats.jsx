@@ -29,8 +29,8 @@ export function Stats({ albumStats, countryStats, costStats }) {
         <Stat label="Eficiencia" value={pct(costStats.openingEfficiency)} helper="apertura estimada" />
       </div>
       <div className="stats-top-grid">
-        <StatsTop title="Top 5 mas completos" description="Selecciones con mejor avance" teams={leaders} />
-        <StatsTop title="Top 5 mas atrasados" description="Prioridad para completar" teams={lagging} />
+        <StatsTop title="Top 5 más completos" description="Selecciones con mejor avance" teams={leaders} />
+        <StatsTop title="Top 5 más atrasados" description="Prioridad para completar" teams={lagging} />
       </div>
       <Toolbar>
         <Input value={query} placeholder="Buscar..." onChange={(event) => setQuery(event.target.value)} />
