@@ -1,11 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
 import { emptyState } from '../domain/albumState.js';
 
+const PENDING_STATE_KEY = 'album-world-cup-2026-mx-pending-state';
+
 export function useRemoteAlbumState({ token, user, setUser, setNotice, setAuthStatus, remoteAlbumRepository }) {
   const [state, setState] = useState(() => emptyState());
   const [syncStatus, setSyncStatus] = useState(token ? 'loading' : 'signed-out');
+  const [revision, setRevision] = useState(null);
+  const [conflict, setConflict] = useState(null);
   const hydratedRemote = useRef(false);
   const saveTimer = useRef(null);
+  const stateRef = useRef(state);
+  const revisionRef = useRef(revision);
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  useEffect(() => {
+    revisionRef.current = revision;
+  }, [revision]);
 
   useEffect(() => {
     if (!token) {
@@ -20,21 +34,23 @@ export function useRemoteAlbumState({ token, user, setUser, setNotice, setAuthSt
     setSyncStatus('loading');
     setAuthStatus('loading');
     Promise.all([remoteAlbumRepository.getMe(), remoteAlbumRepository.loadAlbum()])
-      .then(([nextUser, remoteState]) => {
+      .then(([nextUser, remoteAlbum]) => {
         if (cancelled) return;
         setUser(nextUser);
         hydratedRemote.current = true;
-        setState(remoteState);
+        const pending = readPendingState();
+        setState(pending || remoteAlbum.state);
+        setRevision(remoteAlbum.revision);
         setSyncStatus('synced');
         setAuthStatus('authenticated');
-        setNotice(`Album cargado para ${nextUser.name}.`);
+        setNotice(pending ? 'Recuperé cambios pendientes guardados en este navegador.' : `Álbum cargado para ${nextUser.name}.`);
       })
-      .catch(() => {
+      .catch((error) => {
         if (cancelled) return;
         hydratedRemote.current = true;
-        setSyncStatus('error');
+        setSyncStatus(error.status === 401 ? 'signed-out' : 'error');
         setAuthStatus('signed-out');
-        setNotice('No pude conectar con el backend.');
+        setNotice(error.status === 401 ? 'Accede para continuar con tu álbum.' : 'No pude conectar con el backend.');
       });
     return () => {
       cancelled = true;
@@ -44,18 +60,41 @@ export function useRemoteAlbumState({ token, user, setUser, setNotice, setAuthSt
   useEffect(() => {
     if (!token || !user || !hydratedRemote.current) return undefined;
     setSyncStatus('saving');
+    writePendingState(state);
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       remoteAlbumRepository
-        .saveAlbum(state)
-        .then(() => setSyncStatus('synced'))
-        .catch(() => {
+        .saveAlbum(state, { revision: revisionRef.current })
+        .then((saved) => {
+          setRevision(saved.revision);
+          clearPendingState();
+          setConflict(null);
+          setSyncStatus('synced');
+          setNotice('Cambios guardados.');
+        })
+        .catch((error) => {
+          if (error.status === 409) {
+            setConflict(error.message);
+            setSyncStatus('conflict');
+            setNotice('El álbum cambió en otra pestaña o dispositivo.');
+            return;
+          }
           setSyncStatus('error');
           setNotice('No pude guardar los cambios en el backend.');
         });
     }, 500);
     return () => clearTimeout(saveTimer.current);
   }, [state, token, user, remoteAlbumRepository, setNotice]);
+
+  useEffect(() => {
+    function warnIfPending(event) {
+      if (syncStatus !== 'saving' && syncStatus !== 'error' && syncStatus !== 'conflict') return;
+      event.preventDefault();
+      event.returnValue = '';
+    }
+    window.addEventListener('beforeunload', warnIfPending);
+    return () => window.removeEventListener('beforeunload', warnIfPending);
+  }, [syncStatus]);
 
   function update(nextState, nextNotice) {
     setState(nextState);
@@ -67,9 +106,40 @@ export function useRemoteAlbumState({ token, user, setUser, setNotice, setAuthSt
     if (nextNotice) setNotice(nextNotice);
   }
 
+  function retrySave() {
+    if (!token || !user) return;
+    setSyncStatus('saving');
+    remoteAlbumRepository
+      .saveAlbum(stateRef.current, { revision: revisionRef.current })
+      .then((saved) => {
+        setRevision(saved.revision);
+        clearPendingState();
+        setConflict(null);
+        setSyncStatus('synced');
+        setNotice('Cambios guardados.');
+      })
+      .catch((error) => {
+        setSyncStatus(error.status === 409 ? 'conflict' : 'error');
+        setNotice(error.status === 409 ? 'El álbum cambió en otra pestaña o dispositivo.' : 'No pude guardar los cambios en el backend.');
+      });
+  }
+
+  function reloadRemote() {
+    setSyncStatus('loading');
+    remoteAlbumRepository.loadAlbum().then((remoteAlbum) => {
+      setState(remoteAlbum.state);
+      setRevision(remoteAlbum.revision);
+      setConflict(null);
+      clearPendingState();
+      setSyncStatus('synced');
+      setNotice('Álbum remoto recargado.');
+    });
+  }
+
   function resetLocalState() {
     hydratedRemote.current = false;
     setState(emptyState());
+    clearPendingState();
   }
 
   return {
@@ -77,6 +147,34 @@ export function useRemoteAlbumState({ token, user, setUser, setNotice, setAuthSt
     patch,
     update,
     syncStatus,
+    conflict,
+    retrySave,
+    reloadRemote,
     resetLocalState
   };
+}
+
+function readPendingState() {
+  try {
+    const raw = globalThis.localStorage?.getItem(PENDING_STATE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writePendingState(state) {
+  try {
+    globalThis.localStorage?.setItem(PENDING_STATE_KEY, JSON.stringify(state));
+  } catch {
+    // Local drafts are best-effort only.
+  }
+}
+
+function clearPendingState() {
+  try {
+    globalThis.localStorage?.removeItem(PENDING_STATE_KEY);
+  } catch {
+    // Local drafts are best-effort only.
+  }
 }
