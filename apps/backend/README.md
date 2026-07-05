@@ -95,7 +95,7 @@ python3 -m pytest
 
 ## Docker
 
-La imagen del backend ejecuta `alembic upgrade head` antes de iniciar Uvicorn.
+La imagen del backend ejecuta `alembic upgrade head` desde `docker-entrypoint.sh` antes de iniciar Uvicorn. Si necesitas desactivarlo en un caso especial, usa `ALBUM_RUN_MIGRATIONS=false`.
 
 ```bash
 docker build -t album-backend .
