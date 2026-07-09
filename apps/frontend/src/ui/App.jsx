@@ -15,6 +15,7 @@ import { Settings } from './views/Settings.jsx';
 import { Specials } from './views/Specials.jsx';
 import { Stats } from './views/Stats.jsx';
 import { Exchange } from './views/Exchange.jsx';
+import { SubTabsList } from './components/SectionTabs.jsx';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Toaster } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
@@ -216,13 +217,10 @@ export function App({ createAlbumRepository, tokenStorage }) {
             }}
             className="tabs-shell"
           >
-            <TabsList className="tabs-list sub-tabs-list">
-              {ALBUM_ROUTE_TABS.map(([id, , label]) => (
-                <TabsTrigger value={id} key={id}>
-                  {label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+            <SubTabsList
+              ariaLabel="Secciones del álbum"
+              tabs={ALBUM_ROUTE_TABS.map(([id, , label]) => ({ value: id, label }))}
+            />
           </Tabs>
         </nav>
       )}
