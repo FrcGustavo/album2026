@@ -24,18 +24,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-const ROUTE_TABS = [
+const PRIMARY_ROUTE_TABS = [
   ['inicio', '/', 'Inicio'],
-  ['paises', '/paises', 'Países'],
-  ['album', '/album', 'Álbum completo'],
-  ['especiales', '/especiales', 'Especiales'],
-  ['cracks', '/cracks', 'Cracks'],
-  ['coca-cola', '/coca-cola', 'Coca-Cola'],
+  ['album', '/album', 'Álbum'],
+  ['intercambio', '/intercambio', 'Intercambio'],
   ['costos', '/costos', 'Costos'],
   ['estadisticas', '/estadisticas', 'Estadísticas'],
-  ['intercambio', '/intercambio', 'Intercambio'],
   ['configuracion', '/configuracion', 'Configuración']
 ];
+
+const ALBUM_ROUTE_TABS = [
+  ['album', '/album', 'Completo'],
+  ['paises', '/paises', 'Países'],
+  ['especiales', '/especiales', 'Especiales'],
+  ['cracks', '/cracks', 'Cracks'],
+  ['coca-cola', '/coca-cola', 'Coca-Cola']
+];
+
+const ROUTE_TABS = [...PRIMARY_ROUTE_TABS, ...ALBUM_ROUTE_TABS.filter(([id]) => !PRIMARY_ROUTE_TABS.some(([primaryId]) => primaryId === id))];
+const ALBUM_PATHS = new Set(ALBUM_ROUTE_TABS.map(([, path]) => path));
 
 const REPOSITORY_URL = 'https://github.com/FrcGustavo/album2026';
 
@@ -45,7 +52,7 @@ export function App({ createAlbumRepository, tokenStorage }) {
   const auth = useAuthSession({ createAlbumRepository, tokenStorage });
   const album = useRemoteAlbumState(auth);
   const { token, user, notice, setNotice, authenticate, remoteAlbumRepository } = auth;
-  const { state, patch, update, syncStatus, conflict, retrySave, reloadRemote, resetLocalState } = album;
+  const { state, patch, update, syncStatus, conflict, migrationRequired, migrationBusy, migrationError, migrateAlbum, retrySave, reloadRemote, resetLocalState } = album;
   const [theme, setTheme] = useState(() => globalThis.localStorage?.getItem('album-theme') || 'light');
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -78,7 +85,8 @@ export function App({ createAlbumRepository, tokenStorage }) {
     remoteAlbumRepository
   };
 
-  const activeTab = ROUTE_TABS.find(([, path]) => path === location.pathname)?.[0] || 'inicio';
+  const activePrimaryTab = ALBUM_PATHS.has(location.pathname) ? 'album' : PRIMARY_ROUTE_TABS.find(([, path]) => path === location.pathname)?.[0] || 'inicio';
+  const activeAlbumTab = ALBUM_ROUTE_TABS.find(([, path]) => path === location.pathname)?.[0] || 'album';
 
   useEffect(() => {
     if (location.pathname !== '/' || !location.hash) return;
@@ -93,12 +101,12 @@ export function App({ createAlbumRepository, tokenStorage }) {
   }, [theme]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || migrationRequired) return;
     const key = 'album-onboarding-seen';
     if (globalThis.localStorage?.getItem(key)) return;
     setShowOnboarding(true);
     globalThis.localStorage?.setItem(key, '1');
-  }, [user]);
+  }, [user, migrationRequired]);
 
   const isAuthRoute = location.pathname === '/login' || location.pathname === '/registro';
 
@@ -143,9 +151,9 @@ export function App({ createAlbumRepository, tokenStorage }) {
 
       <nav className="section-nav" aria-label="Secciones">
         <Select
-          value={activeTab}
+          value={activePrimaryTab}
           onValueChange={(tab) => {
-            const nextPath = ROUTE_TABS.find(([id]) => id === tab)?.[1] || '/';
+            const nextPath = PRIMARY_ROUTE_TABS.find(([id]) => id === tab)?.[1] || '/';
             navigate(nextPath);
           }}
         >
@@ -153,7 +161,7 @@ export function App({ createAlbumRepository, tokenStorage }) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {ROUTE_TABS.map(([id, , label]) => (
+            {PRIMARY_ROUTE_TABS.map(([id, , label]) => (
               <SelectItem value={id} key={id}>
                 {label}
               </SelectItem>
@@ -162,15 +170,15 @@ export function App({ createAlbumRepository, tokenStorage }) {
         </Select>
 
         <Tabs
-          value={activeTab}
+          value={activePrimaryTab}
           onValueChange={(tab) => {
-            const nextPath = ROUTE_TABS.find(([id]) => id === tab)?.[1] || '/';
+            const nextPath = PRIMARY_ROUTE_TABS.find(([id]) => id === tab)?.[1] || '/';
             navigate(nextPath);
           }}
           className="tabs-shell"
         >
           <TabsList className="tabs-list">
-            {ROUTE_TABS.map(([id, , label]) => (
+            {PRIMARY_ROUTE_TABS.map(([id, , label]) => (
               <TabsTrigger value={id} key={id}>
                 {label}
               </TabsTrigger>
@@ -179,7 +187,47 @@ export function App({ createAlbumRepository, tokenStorage }) {
         </Tabs>
       </nav>
 
-      {(syncStatus === 'error' || syncStatus === 'conflict') && (
+      {ALBUM_PATHS.has(location.pathname) && (
+        <nav className="section-nav section-subnav" aria-label="Secciones del álbum">
+          <Select
+            value={activeAlbumTab}
+            onValueChange={(tab) => {
+              const nextPath = ALBUM_ROUTE_TABS.find(([id]) => id === tab)?.[1] || '/album';
+              navigate(nextPath);
+            }}
+          >
+            <SelectTrigger className="mobile-section-select" aria-label="Seccion del album">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ALBUM_ROUTE_TABS.map(([id, , label]) => (
+                <SelectItem value={id} key={id}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Tabs
+            value={activeAlbumTab}
+            onValueChange={(tab) => {
+              const nextPath = ALBUM_ROUTE_TABS.find(([id]) => id === tab)?.[1] || '/album';
+              navigate(nextPath);
+            }}
+            className="tabs-shell"
+          >
+            <TabsList className="tabs-list sub-tabs-list">
+              {ALBUM_ROUTE_TABS.map(([id, , label]) => (
+                <TabsTrigger value={id} key={id}>
+                  {label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        </nav>
+      )}
+
+      {((syncStatus === 'error' && !migrationRequired) || syncStatus === 'conflict') && (
         <Alert variant="destructive" className="sync-alert">
           <AlertDescription>
             {syncStatus === 'conflict' ? conflict || 'El álbum cambió en otra pestaña o dispositivo.' : 'No se pudo guardar. Tus cambios siguen en este navegador.'}
@@ -214,6 +262,30 @@ export function App({ createAlbumRepository, tokenStorage }) {
           </DialogHeader>
           <DialogFooter>
             <Button type="button" onClick={() => setShowOnboarding(false)}>Entendido</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={migrationRequired} onOpenChange={(open) => open && migrationRequired}>
+        <DialogContent
+          onEscapeKeyDown={(event) => event.preventDefault()}
+          onPointerDownOutside={(event) => event.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle>Actualización de seguridad del álbum</DialogTitle>
+            <DialogDescription>
+              Vamos a mover tu progreso a una estructura más segura y organizada. Conservaremos tus estampas, repetidas, compras, cracks e historial.
+            </DialogDescription>
+          </DialogHeader>
+          {migrationError && (
+            <Alert variant="destructive">
+              <AlertDescription>No pude completar la migración. Tu información anterior sigue segura. Intenta de nuevo.</AlertDescription>
+            </Alert>
+          )}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={logout} disabled={migrationBusy}>Cerrar sesión</Button>
+            <Button type="button" onClick={migrateAlbum} disabled={migrationBusy}>
+              {migrationBusy ? 'Migrando...' : 'Migrar ahora'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

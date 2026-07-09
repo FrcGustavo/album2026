@@ -8,6 +8,10 @@ export function useRemoteAlbumState({ token, user, setUser, setNotice, setAuthSt
   const [syncStatus, setSyncStatus] = useState(token ? 'loading' : 'signed-out');
   const [revision, setRevision] = useState(null);
   const [conflict, setConflict] = useState(null);
+  const [migrationRequired, setMigrationRequired] = useState(false);
+  const [migrationStatus, setMigrationStatus] = useState(null);
+  const [migrationBusy, setMigrationBusy] = useState(false);
+  const [migrationError, setMigrationError] = useState('');
   const hydratedRemote = useRef(false);
   const saveTimer = useRef(null);
   const stateRef = useRef(state);
@@ -26,6 +30,10 @@ export function useRemoteAlbumState({ token, user, setUser, setNotice, setAuthSt
       hydratedRemote.current = false;
       setUser(null);
       setState(emptyState());
+      setMigrationRequired(false);
+      setMigrationStatus(null);
+      setMigrationBusy(false);
+      setMigrationError('');
       setSyncStatus('signed-out');
       setAuthStatus('signed-out');
       return;
@@ -38,16 +46,31 @@ export function useRemoteAlbumState({ token, user, setUser, setNotice, setAuthSt
         if (cancelled) return;
         setUser(nextUser);
         hydratedRemote.current = true;
-        const pending = readPendingState();
+        const pending = remoteAlbum.migrationRequired ? null : readPendingState();
         setState(pending || remoteAlbum.state);
         setRevision(remoteAlbum.revision);
+        setMigrationRequired(Boolean(remoteAlbum.migrationRequired));
+        setMigrationStatus({
+          required: Boolean(remoteAlbum.migrationRequired),
+          storageVersion: remoteAlbum.storageVersion || 'normalized',
+          legacyRevision: remoteAlbum.storageVersion === 'legacy' ? Number(remoteAlbum.revision) || null : null,
+          normalizedRevision: remoteAlbum.storageVersion === 'normalized' ? Number(remoteAlbum.revision) || null : null
+        });
         setSyncStatus('synced');
         setAuthStatus('authenticated');
-        setNotice(pending ? 'Recuperé cambios pendientes guardados en este navegador.' : `Álbum cargado para ${nextUser.name}.`);
+        setNotice(
+          remoteAlbum.migrationRequired
+            ? 'Tu álbum necesita una actualización de seguridad antes de continuar.'
+            : pending
+              ? 'Recuperé cambios pendientes guardados en este navegador.'
+              : `Álbum cargado para ${nextUser.name}.`
+        );
       })
       .catch((error) => {
         if (cancelled) return;
         hydratedRemote.current = true;
+        setMigrationRequired(false);
+        setMigrationStatus(null);
         setSyncStatus(error.status === 401 ? 'signed-out' : 'error');
         setAuthStatus('signed-out');
         setNotice(error.status === 401 ? 'Accede para continuar con tu álbum.' : 'No pude conectar con el backend.');
@@ -58,7 +81,7 @@ export function useRemoteAlbumState({ token, user, setUser, setNotice, setAuthSt
   }, [token, remoteAlbumRepository, setAuthStatus, setNotice, setUser]);
 
   useEffect(() => {
-    if (!token || !user || !hydratedRemote.current) return undefined;
+    if (!token || !user || !hydratedRemote.current || migrationRequired || migrationBusy) return undefined;
     setSyncStatus('saving');
     writePendingState(state);
     clearTimeout(saveTimer.current);
@@ -84,7 +107,7 @@ export function useRemoteAlbumState({ token, user, setUser, setNotice, setAuthSt
         });
     }, 500);
     return () => clearTimeout(saveTimer.current);
-  }, [state, token, user, remoteAlbumRepository, setNotice]);
+  }, [state, token, user, migrationRequired, migrationBusy, remoteAlbumRepository, setNotice]);
 
   useEffect(() => {
     function warnIfPending(event) {
@@ -129,6 +152,13 @@ export function useRemoteAlbumState({ token, user, setUser, setNotice, setAuthSt
     remoteAlbumRepository.loadAlbum().then((remoteAlbum) => {
       setState(remoteAlbum.state);
       setRevision(remoteAlbum.revision);
+      setMigrationRequired(Boolean(remoteAlbum.migrationRequired));
+      setMigrationStatus({
+        required: Boolean(remoteAlbum.migrationRequired),
+        storageVersion: remoteAlbum.storageVersion || 'normalized',
+        legacyRevision: remoteAlbum.storageVersion === 'legacy' ? Number(remoteAlbum.revision) || null : null,
+        normalizedRevision: remoteAlbum.storageVersion === 'normalized' ? Number(remoteAlbum.revision) || null : null
+      });
       setConflict(null);
       clearPendingState();
       setSyncStatus('synced');
@@ -139,7 +169,44 @@ export function useRemoteAlbumState({ token, user, setUser, setNotice, setAuthSt
   function resetLocalState() {
     hydratedRemote.current = false;
     setState(emptyState());
+    setMigrationRequired(false);
+    setMigrationStatus(null);
+    setMigrationBusy(false);
+    setMigrationError('');
     clearPendingState();
+  }
+
+  function migrateAlbum() {
+    if (!token || !user || migrationBusy) return Promise.resolve(null);
+    setMigrationBusy(true);
+    setMigrationError('');
+    setSyncStatus('loading');
+    return remoteAlbumRepository
+      .migrateAlbum()
+      .then((remoteAlbum) => {
+        setState(remoteAlbum.state);
+        setRevision(remoteAlbum.revision);
+        setMigrationRequired(Boolean(remoteAlbum.migrationRequired));
+        setMigrationStatus({
+          required: Boolean(remoteAlbum.migrationRequired),
+          storageVersion: remoteAlbum.storageVersion || 'normalized',
+          legacyRevision: null,
+          normalizedRevision: Number(remoteAlbum.revision) || null
+        });
+        setConflict(null);
+        clearPendingState();
+        setSyncStatus('synced');
+        setNotice('Tu álbum fue migrado correctamente.');
+        return remoteAlbum;
+      })
+      .catch((error) => {
+        const message = error.message || 'No pude completar la migración. Tu información anterior sigue segura. Intenta de nuevo.';
+        setMigrationError(message);
+        setSyncStatus('error');
+        setNotice('No pude completar la migración. Tu información anterior sigue segura.');
+        return null;
+      })
+      .finally(() => setMigrationBusy(false));
   }
 
   return {
@@ -148,6 +215,11 @@ export function useRemoteAlbumState({ token, user, setUser, setNotice, setAuthSt
     update,
     syncStatus,
     conflict,
+    migrationRequired,
+    migrationStatus,
+    migrationBusy,
+    migrationError,
+    migrateAlbum,
     retrySave,
     reloadRemote,
     resetLocalState

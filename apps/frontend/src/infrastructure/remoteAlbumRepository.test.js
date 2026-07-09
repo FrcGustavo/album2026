@@ -32,10 +32,45 @@ describe('remoteAlbumRepository', () => {
   });
 
   it('sanitizes loaded album state', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse({ stickers: { MEX1: '2', NOPE: 9 } }));
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      jsonResponse(
+        { stickers: { MEX1: '2', NOPE: 9 } },
+        { headers: { 'X-Album-Storage-Version': 'legacy', 'X-Album-Migration-Required': 'true' } }
+      )
+    );
     const repository = createRemoteAlbumRepository({ baseUrl: 'https://api.test' });
 
-    await expect(repository.loadAlbum()).resolves.toMatchObject({ state: { stickers: { MEX1: 2 } } });
+    await expect(repository.loadAlbum()).resolves.toMatchObject({
+      state: { stickers: { MEX1: 2 } },
+      storageVersion: 'legacy',
+      migrationRequired: true
+    });
+  });
+
+  it('loads migration status', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse({ required: true, storageVersion: 'legacy' }));
+    const repository = createRemoteAlbumRepository({ baseUrl: 'https://api.test' });
+
+    await expect(repository.getMigrationStatus()).resolves.toMatchObject({ required: true, storageVersion: 'legacy' });
+    expect(fetchMock).toHaveBeenCalledWith('https://api.test/me/album/migration-status', expect.any(Object));
+  });
+
+  it('migrates the album and returns normalized metadata', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      jsonResponse(
+        { stickers: { MEX1: 1 } },
+        { headers: { 'X-Album-Revision': '7', 'X-Album-Storage-Version': 'normalized', 'X-Album-Migration-Required': 'false' } }
+      )
+    );
+    const repository = createRemoteAlbumRepository({ baseUrl: 'https://api.test' });
+
+    await expect(repository.migrateAlbum()).resolves.toMatchObject({
+      state: { stickers: { MEX1: 1 } },
+      revision: '7',
+      storageVersion: 'normalized',
+      migrationRequired: false
+    });
+    expect(fetchMock).toHaveBeenCalledWith('https://api.test/me/album/migrate', expect.objectContaining({ method: 'POST' }));
   });
 
   it('throws backend detail messages for failed requests', async () => {
@@ -75,7 +110,7 @@ function jsonResponse(payload, { ok = true, status = 200, headers = {} } = {}) {
   return {
     ok,
     status,
-    headers: { get: (name) => headers[name] || null },
+    headers: { get: (name) => headers[name] || headers[name.toLowerCase()] || null },
     text: () => Promise.resolve(JSON.stringify(payload)),
     json: () => Promise.resolve(payload)
   };

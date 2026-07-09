@@ -33,7 +33,8 @@ export function createRemoteAlbumRepository({
     return {
       payload,
       revision: response.headers?.get?.('X-Album-Revision') || response.headers?.get?.('ETag')?.replaceAll('"', '') || null,
-      updatedAt: response.headers?.get?.('X-Album-Updated-At') || null
+      updatedAt: response.headers?.get?.('X-Album-Updated-At') || null,
+      headers: response.headers
     };
   }
 
@@ -67,7 +68,13 @@ export function createRemoteAlbumRepository({
     },
     async loadAlbum() {
       const result = await request('/me/album');
-      return { state: sanitizeState(result.payload), revision: result.revision, updatedAt: result.updatedAt };
+      return {
+        state: sanitizeState(result.payload),
+        revision: result.revision,
+        updatedAt: result.updatedAt,
+        storageVersion: responseHeader(result, 'X-Album-Storage-Version') || 'normalized',
+        migrationRequired: responseHeader(result, 'X-Album-Migration-Required') === 'true'
+      };
     },
     async saveAlbum(state, { revision } = {}) {
       const result = await request('/me/album', {
@@ -83,6 +90,23 @@ export function createRemoteAlbumRepository({
           body: JSON.stringify(state)
         });
       return sanitizeState(result.payload);
+    },
+    getMigrationStatus() {
+      return request('/me/album/migration-status').then((result) => result.payload);
+    },
+    async migrateAlbum() {
+      const result = await request('/me/album/migrate', { method: 'POST' });
+      return {
+        state: sanitizeState(result.payload),
+        revision: result.revision,
+        updatedAt: result.updatedAt,
+        storageVersion: responseHeader(result, 'X-Album-Storage-Version') || 'normalized',
+        migrationRequired: responseHeader(result, 'X-Album-Migration-Required') === 'true'
+      };
     }
   };
+}
+
+function responseHeader(result, name) {
+  return result.headers?.get?.(name) || result.headers?.get?.(name.toLowerCase()) || null;
 }

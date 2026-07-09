@@ -449,6 +449,14 @@ h2 {
   backdrop-filter: blur(12px);
 }
 
+.section-subnav {
+  top: 48px;
+  z-index: 4;
+  margin-top: -6px;
+  padding: 4px 0;
+  background: rgba(255, 253, 248, 0.72);
+}
+
 .tabs-shell {
   padding: 0;
   overflow-x: auto;
@@ -467,6 +475,14 @@ h2 {
 .tabs-list button {
   flex: 0 0 auto;
   white-space: nowrap;
+}
+
+.sub-tabs-list {
+  min-width: auto;
+}
+
+.sub-tabs-list button {
+  font-size: 0.86rem;
 }
 
 .view-stack {
@@ -1593,6 +1609,11 @@ h2 {
     position: static;
     margin: 10px 0 14px;
     padding: 8px 0;
+  }
+
+  .section-subnav {
+    margin-top: -8px;
+    padding-top: 0;
   }
 
   .tabs-shell {
