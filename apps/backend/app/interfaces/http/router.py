@@ -13,7 +13,7 @@ from app.domain.catalog import catalog
 from app.infrastructure.security import JoseTokenService
 from app.interfaces.http.dependencies import get_album_service, get_user_service
 from app.config import get_settings
-from app.interfaces.http.schemas import AlbumImportRequest, AlbumState, CocaColaPatch, CrackCreate, LoginRequest, PurchaseCreate, RegisterRequest, TokenResponse, UserOut
+from app.interfaces.http.schemas import AlbumImportRequest, AlbumMigrationStatus, AlbumState, CocaColaPatch, CrackCreate, LoginRequest, PurchaseCreate, RegisterRequest, TokenResponse, UserOut
 
 router = APIRouter(prefix="/api")
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -111,7 +111,7 @@ def get_catalog_summary():
 @router.get("/me/album", tags=["album"], response_model=AlbumState, responses={401: {"description": "Token ausente o invalido"}})
 def get_album(response: Response, user: User = Depends(current_user), service: AlbumService = Depends(get_album_service)):
     record = _album_call(lambda: service.get_album_record(user.id))
-    _set_album_headers(response, record.revision, record.updated_at)
+    _set_album_headers(response, record.revision, record.updated_at, record.storage_version, record.migration_required)
     return record.state
 
 
@@ -131,8 +131,20 @@ def put_album(
             raise HTTPException(status_code=409, detail="El album cambio en otra pestaña o dispositivo.") from exc
         raise
     record = _album_call(lambda: service.get_album_record(user.id))
-    _set_album_headers(response, record.revision, record.updated_at)
+    _set_album_headers(response, record.revision, record.updated_at, record.storage_version, record.migration_required)
     return state
+
+
+@router.get("/me/album/migration-status", tags=["album"], response_model=AlbumMigrationStatus)
+def get_album_migration_status(user: User = Depends(current_user), service: AlbumService = Depends(get_album_service)):
+    return _album_call(lambda: service.migration_status(user.id))
+
+
+@router.post("/me/album/migrate", tags=["album"], response_model=AlbumState)
+def migrate_album(response: Response, user: User = Depends(current_user), service: AlbumService = Depends(get_album_service)):
+    record = _album_call(lambda: service.migrate_album(user.id))
+    _set_album_headers(response, record.revision, record.updated_at, record.storage_version, record.migration_required)
+    return record.state
 
 
 @router.post("/me/album/stickers/{code}/increment", tags=["album"], response_model=AlbumState)
@@ -210,10 +222,12 @@ def _clear_auth_cookie(response: Response) -> None:
     response.delete_cookie(settings.cookie_name, httponly=True, secure=settings.secure_cookies, samesite=settings.cookie_samesite)
 
 
-def _set_album_headers(response: Response, revision: int, updated_at: datetime) -> None:
+def _set_album_headers(response: Response, revision: int, updated_at: datetime, storage_version: str = "normalized", migration_required: bool = False) -> None:
     response.headers["ETag"] = f'"{revision}"'
     response.headers["X-Album-Revision"] = str(revision)
     response.headers["X-Album-Updated-At"] = updated_at.isoformat()
+    response.headers["X-Album-Storage-Version"] = storage_version
+    response.headers["X-Album-Migration-Required"] = "true" if migration_required else "false"
 
 
 def _parse_if_match(value: Optional[str]) -> Optional[int]:

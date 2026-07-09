@@ -42,6 +42,8 @@ class AlbumRecord:
     state: dict
     revision: int
     updated_at: datetime
+    storage_version: str = "normalized"
+    migration_required: bool = False
 
 
 class UserRepository(Protocol):
@@ -53,6 +55,8 @@ class UserRepository(Protocol):
 class AlbumRepository(Protocol):
     def get_by_user_id(self, user_id: int) -> AlbumRecord | None: ...
     def save_for_user_id(self, user_id: int, state: dict, expected_revision: int | None = None) -> AlbumRecord: ...
+    def get_migration_status(self, user_id: int) -> dict: ...
+    def migrate_user(self, user_id: int) -> AlbumRecord: ...
 
 
 class UserService:
@@ -96,7 +100,13 @@ class AlbumService:
         record = self.albums.get_by_user_id(user_id)
         if record is None:
             return self.albums.save_for_user_id(user_id, empty_state())
-        return AlbumRecord(state=sanitize_state(record.state), revision=record.revision, updated_at=record.updated_at)
+        return AlbumRecord(
+            state=sanitize_state(record.state),
+            revision=record.revision,
+            updated_at=record.updated_at,
+            storage_version=record.storage_version,
+            migration_required=record.migration_required,
+        )
 
     def get_album(self, user_id: int) -> dict:
         return self.get_album_record(user_id).state
@@ -136,6 +146,14 @@ class AlbumService:
 
     def export_album(self, user_id: int) -> dict:
         return self.get_album(user_id)
+
+    def migration_status(self, user_id: int) -> dict:
+        self._ensure_user(user_id)
+        return self.albums.get_migration_status(user_id)
+
+    def migrate_album(self, user_id: int) -> AlbumRecord:
+        self._ensure_user(user_id)
+        return self.albums.migrate_user(user_id)
 
     def _ensure_user(self, user_id: int):
         user = self.users.get(user_id)

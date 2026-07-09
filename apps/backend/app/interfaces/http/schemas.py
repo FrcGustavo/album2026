@@ -53,6 +53,13 @@ class AlbumImportRequest(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
+class AlbumMigrationStatus(BaseModel):
+    required: bool
+    storageVersion: str
+    legacyRevision: Optional[int] = None
+    normalizedRevision: Optional[int] = None
+
+
 class CocaColaPatch(BaseModel):
     enabled: bool
 
