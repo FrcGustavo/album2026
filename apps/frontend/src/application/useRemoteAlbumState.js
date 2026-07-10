@@ -83,9 +83,9 @@ export function useRemoteAlbumState({ token, user, setUser, setNotice, setAuthSt
   useEffect(() => {
     if (!token || !user || !hydratedRemote.current || migrationRequired || migrationBusy) return undefined;
     setSyncStatus('saving');
-    writePendingState(state);
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
+      writePendingState(state);
       remoteAlbumRepository
         .saveAlbum(state, { revision: revisionRef.current })
         .then((saved) => {

@@ -97,8 +97,8 @@ La API vive en `/api` y la documentacion Swagger en `/docs`.
 Flujo principal:
 
 1. `POST /api/auth/register` crea cuenta con `email`, `name` y `password`.
-2. `POST /api/auth/login` devuelve `access_token`.
-3. El frontend envia `Authorization: Bearer <token>`.
+2. `POST /api/auth/login` devuelve `access_token` y setea una cookie httpOnly configurable (`album_access_token` por default).
+3. El frontend envia cookies con `credentials: include`; `Authorization: Bearer <token>` queda como compatibilidad para clientes no basados en cookie.
 4. El album se lee y guarda con rutas `/api/me/album`.
 
 No hay guardado local permanente del album: si el backend no esta disponible, la app muestra error y conserva cambios pendientes en el navegador solo como borrador temporal.

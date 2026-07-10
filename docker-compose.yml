@@ -21,7 +21,7 @@ services:
     build:
       context: ./apps/backend
     environment:
-      ALBUM_ENV: development
+      ALBUM_ENV: ${ALBUM_ENV:-development}
       ALBUM_AUTO_CREATE_TABLES: "false"
       ALBUM_DATABASE_URL: postgresql+psycopg://album:album-dev-password@postgres:5432/album
       ALBUM_JWT_SECRET_KEY: replace-with-a-long-random-secret

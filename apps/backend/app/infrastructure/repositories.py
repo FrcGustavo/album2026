@@ -4,7 +4,7 @@ import json
 from datetime import datetime, timezone
 
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.application.services import AlbumRecord, User, UserAuthRecord
 from app.domain.album import empty_state, sanitize_state
@@ -190,7 +190,14 @@ class SqlAlchemyAlbumRepository:
 
     def _get_normalized_state(self, user_id: int, album_id: int) -> UserAlbumStateModel | None:
         return self.session.scalar(
-            select(UserAlbumStateModel).where(UserAlbumStateModel.user_id == user_id, UserAlbumStateModel.album_id == album_id)
+            select(UserAlbumStateModel)
+            .options(
+                selectinload(UserAlbumStateModel.sticker_copies).selectinload(UserStickerCopyModel.sticker),
+                selectinload(UserAlbumStateModel.custom_cracks),
+                selectinload(UserAlbumStateModel.purchases),
+                selectinload(UserAlbumStateModel.activity_log),
+            )
+            .where(UserAlbumStateModel.user_id == user_id, UserAlbumStateModel.album_id == album_id)
         )
 
     def _to_album_record(self, model: UserAlbumStateModel) -> AlbumRecord:
