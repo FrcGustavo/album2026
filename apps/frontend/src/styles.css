@@ -79,6 +79,27 @@
   text-rendering: optimizeLegibility;
 }
 
+.dark {
+  --background: #10241f;
+  --foreground: #fffdf8;
+  --card: #18332d;
+  --card-foreground: #fffdf8;
+  --popover: #18332d;
+  --popover-foreground: #fffdf8;
+  --primary: #80b96b;
+  --primary-foreground: #10241f;
+  --secondary: #294840;
+  --secondary-foreground: #fffdf8;
+  --muted: #243d36;
+  --muted-foreground: #cabfae;
+  --accent: #c79a3a;
+  --accent-foreground: #10241f;
+  --border: #38534b;
+  --input: #49665d;
+  --ring: #f4c400;
+  --paper: #18332d;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -428,6 +449,14 @@ h2 {
   backdrop-filter: blur(12px);
 }
 
+.section-subnav {
+  top: 48px;
+  z-index: 4;
+  margin-top: -6px;
+  padding: 4px 0;
+  background: rgba(255, 253, 248, 0.72);
+}
+
 .tabs-shell {
   padding: 0;
   overflow-x: auto;
@@ -446,6 +475,17 @@ h2 {
 .tabs-list button {
   flex: 0 0 auto;
   white-space: nowrap;
+}
+
+.sub-tabs-list {
+  min-width: auto;
+  height: 36px;
+  padding: 3px;
+}
+
+.sub-tabs-list button {
+  padding: 5px 10px;
+  font-size: 0.82rem;
 }
 
 .view-stack {
@@ -467,6 +507,92 @@ h2 {
 .dashboard-top-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: stretch;
+}
+
+.exchange-list-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.exchange-tabs {
+  display: grid;
+  gap: 12px;
+}
+
+.exchange-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.exchange-panel-header h2 {
+  margin: 0;
+}
+
+.exchange-panel-header .settings-actions {
+  margin: 0;
+}
+
+.exchange-search {
+  margin-top: 12px;
+}
+
+.exchange-sticker-list {
+  max-height: 360px;
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.exchange-sticker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--muted);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.exchange-sticker-row div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.exchange-sticker-row strong,
+.exchange-sticker-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exchange-sticker-row strong {
+  color: var(--cover-green-dark);
+  font-size: 0.95rem;
+}
+
+.exchange-sticker-row span {
+  color: var(--muted-foreground);
+  font-size: 0.86rem;
+  font-weight: 750;
+}
+
+.exchange-sticker-row em {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 900;
 }
 
 .quick-entry,
@@ -806,6 +932,10 @@ h2 {
   margin-top: 0;
 }
 
+.sticker-tile-grid.showcase-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 168px), 1fr));
+}
+
 .sticker-tile {
   position: relative;
   min-height: 132px;
@@ -852,6 +982,17 @@ h2 {
   align-items: flex-end;
   justify-content: space-between;
   gap: 8px;
+}
+
+.sticker-controls {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.sticker-controls .ui-button {
+  width: 30px;
+  height: 30px;
 }
 
 .sticker-tile-player {
@@ -1181,6 +1322,80 @@ h2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.password-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.sync-alert {
+  margin: 14px 0;
+}
+
+.sync-alert-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: 10px;
+}
+
+.country-card-button {
+  width: 100%;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: inherit !important;
+  text-align: inherit;
+}
+
+.country-card-button:hover {
+  background: transparent !important;
+}
+
+.summary-panel {
+  display: grid;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 0;
+  border-top: 1px solid var(--muted);
+}
+
+.summary-row span {
+  color: var(--muted-foreground);
+  text-align: right;
+}
+
+.activity-row {
+  align-items: center;
+}
+
+.activity-row div {
+  display: grid;
+  gap: 4px;
+}
+
+.activity-row small,
+.activity-row time {
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.activity-row time {
+  text-align: right;
+  white-space: nowrap;
+}
+
 .settings-content {
   display: grid;
   gap: 18px;
@@ -1271,6 +1486,7 @@ h2 {
   .auth-layout,
   .entry-panel,
   .split-grid,
+  .exchange-list-grid,
   .progress-hero,
   .switch-panel,
   .history-item {
@@ -1474,6 +1690,11 @@ h2 {
     padding: 8px 0;
   }
 
+  .section-subnav {
+    margin-top: -8px;
+    padding-top: 0;
+  }
+
   .tabs-shell {
     display: none;
   }
@@ -1587,6 +1808,10 @@ h2 {
   }
 
   .sticker-tile-grid.wide {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sticker-tile-grid.showcase-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

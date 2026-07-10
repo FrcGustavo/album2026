@@ -21,7 +21,7 @@ services:
     build:
       context: ./apps/backend
     environment:
-      ALBUM_ENV: production
+      ALBUM_ENV: ${ALBUM_ENV:?Set ALBUM_ENV explicitly to development or production}
       ALBUM_AUTO_CREATE_TABLES: "false"
       ALBUM_DATABASE_URL: postgresql+psycopg://album:album-dev-password@postgres:5432/album
       ALBUM_JWT_SECRET_KEY: replace-with-a-long-random-secret
@@ -39,7 +39,7 @@ services:
       context: .
       dockerfile: apps/frontend/Dockerfile
       args:
-        VITE_API_BASE_URL: http://127.0.0.1:8000/api
+        VITE_API_BASE_URL: /api
     depends_on:
       - backend
     ports:

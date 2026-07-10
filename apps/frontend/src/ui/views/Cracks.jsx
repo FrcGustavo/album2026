@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { copiesFor, getCracks } from '../../domain/albumState.js';
+import { appendActivity, copiesFor, getCracks } from '../../domain/albumState.js';
 import { catalog, stickerByCode, teamById } from '../../domain/catalog.js';
+import { includesSearch } from '../../domain/text.js';
 import { Toolbar } from '../components/Layout.jsx';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,10 +13,9 @@ export function Cracks({ state, patch }) {
   const [form, setForm] = useState({ teamId: catalog.teams[0].id, stickerCode: `${catalog.teams[0].id}1` });
   const cracks = getCracks(state);
   const teamStickers = catalog.stickers.filter((sticker) => sticker.teamId === form.teamId);
-  const normalized = query.trim().toLowerCase();
   const visible = cracks.filter((crack) => {
     const team = teamById[crack.teamId];
-    return !normalized || crack.player.toLowerCase().includes(normalized) || team?.name.toLowerCase().includes(normalized) || crack.stickerCode.toLowerCase().includes(normalized);
+    return !query || includesSearch(crack.player, query) || includesSearch(team?.name, query) || includesSearch(crack.stickerCode, query);
   });
 
   function addCrack(event) {
@@ -23,7 +23,7 @@ export function Cracks({ state, patch }) {
     const sticker = stickerByCode[form.stickerCode];
     if (!sticker || sticker.teamId !== form.teamId) return;
     if (cracks.some((crack) => crack.stickerCode === sticker.code)) return;
-    patch((current) => ({
+    patch((current) => appendActivity({
       ...current,
       customCracks: [
         ...current.customCracks,
@@ -35,7 +35,7 @@ export function Cracks({ state, patch }) {
           official: false
         }
       ]
-    }), 'Crack personalizado agregado.');
+    }, 'crack', `Agregaste crack ${sticker.code}.`), 'Crack personalizado agregado.');
   }
 
   function selectTeam(teamId) {
@@ -45,11 +45,11 @@ export function Cracks({ state, patch }) {
   return (
     <section className="view-stack cracks-view">
       <Toolbar>
-        <Input value={query} placeholder="Buscar por nombre, seleccion o codigo..." onChange={(event) => setQuery(event.target.value)} />
+        <Input value={query} placeholder="Buscar por nombre, selección o código..." onChange={(event) => setQuery(event.target.value)} />
       </Toolbar>
       <form className="crack-form" onSubmit={addCrack}>
         <Select value={form.teamId} onValueChange={selectTeam}>
-          <SelectTrigger aria-label="Seleccion">
+          <SelectTrigger aria-label="Selección">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -93,7 +93,7 @@ export function Cracks({ state, patch }) {
                     type="button"
                     variant="destructive"
                     size="sm"
-                    onClick={() => patch((current) => ({ ...current, customCracks: current.customCracks.filter((item) => item.id !== crack.id) }), 'Crack eliminado.')}
+                    onClick={() => patch((current) => appendActivity({ ...current, customCracks: current.customCracks.filter((item) => item.id !== crack.id) }, 'crack', `Eliminaste crack ${crack.stickerCode}.`), 'Crack eliminado.')}
                   >
                     <Trash2 />
                     Eliminar

@@ -15,6 +15,7 @@ describe('remoteAlbumRepository', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       'https://api.test/auth/me',
       expect.objectContaining({
+        credentials: 'include',
         headers: expect.objectContaining({ Authorization: 'Bearer abc123' })
       })
     );
@@ -31,10 +32,45 @@ describe('remoteAlbumRepository', () => {
   });
 
   it('sanitizes loaded album state', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse({ stickers: { MEX1: '2', NOPE: 9 } }));
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      jsonResponse(
+        { stickers: { MEX1: '2', NOPE: 9 } },
+        { headers: { 'X-Album-Storage-Version': 'legacy', 'X-Album-Migration-Required': 'true' } }
+      )
+    );
     const repository = createRemoteAlbumRepository({ baseUrl: 'https://api.test' });
 
-    await expect(repository.loadAlbum()).resolves.toMatchObject({ stickers: { MEX1: 2 } });
+    await expect(repository.loadAlbum()).resolves.toMatchObject({
+      state: { stickers: { MEX1: 2 } },
+      storageVersion: 'legacy',
+      migrationRequired: true
+    });
+  });
+
+  it('loads migration status', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse({ required: true, storageVersion: 'legacy' }));
+    const repository = createRemoteAlbumRepository({ baseUrl: 'https://api.test' });
+
+    await expect(repository.getMigrationStatus()).resolves.toMatchObject({ required: true, storageVersion: 'legacy' });
+    expect(fetchMock).toHaveBeenCalledWith('https://api.test/me/album/migration-status', expect.any(Object));
+  });
+
+  it('migrates the album and returns normalized metadata', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      jsonResponse(
+        { stickers: { MEX1: 1 } },
+        { headers: { 'X-Album-Revision': '7', 'X-Album-Storage-Version': 'normalized', 'X-Album-Migration-Required': 'false' } }
+      )
+    );
+    const repository = createRemoteAlbumRepository({ baseUrl: 'https://api.test' });
+
+    await expect(repository.migrateAlbum()).resolves.toMatchObject({
+      state: { stickers: { MEX1: 1 } },
+      revision: '7',
+      storageVersion: 'normalized',
+      migrationRequired: false
+    });
+    expect(fetchMock).toHaveBeenCalledWith('https://api.test/me/album/migrate', expect.objectContaining({ method: 'POST' }));
   });
 
   it('throws backend detail messages for failed requests', async () => {
@@ -43,12 +79,38 @@ describe('remoteAlbumRepository', () => {
 
     await expect(repository.saveAlbum({})).rejects.toThrow('Payload invalido');
   });
+
+  it('sends If-Match when saving with a revision', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse({ stickers: {} }, { headers: { 'X-Album-Revision': '3' } }));
+    const repository = createRemoteAlbumRepository({ baseUrl: 'https://api.test' });
+
+    await repository.saveAlbum({}, { revision: '2' });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.test/me/album',
+      expect.objectContaining({
+        headers: expect.objectContaining({ 'If-Match': '"2"' })
+      })
+    );
+  });
+
+  it('uses a same-origin API URL by default', async () => {
+    vi.stubGlobal('location', { hostname: 'localhost' });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse({ id: 1, name: 'Gus' }));
+    const repository = createRemoteAlbumRepository();
+
+    await repository.getMe();
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/auth/me', expect.any(Object));
+    vi.unstubAllGlobals();
+  });
 });
 
-function jsonResponse(payload, { ok = true, status = 200 } = {}) {
+function jsonResponse(payload, { ok = true, status = 200, headers = {} } = {}) {
   return {
     ok,
     status,
+    headers: { get: (name) => headers[name] || headers[name.toLowerCase()] || null },
     text: () => Promise.resolve(JSON.stringify(payload)),
     json: () => Promise.resolve(payload)
   };

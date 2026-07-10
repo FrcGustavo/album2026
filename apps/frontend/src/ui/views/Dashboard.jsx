@@ -14,16 +14,24 @@ export function Dashboard({ state, update, notice, albumStats, countryStats, cos
   const [entry, setEntry] = useState('');
   const leaders = [...countryStats].sort((a, b) => b.percent - a.percent).slice(0, 5);
   const lagging = [...countryStats].sort((a, b) => a.percent - b.percent).slice(0, 5);
+  const visibleNotice = notice === 'Cambios guardados.' ? '' : notice;
 
   function addEntry(event) {
     event.preventDefault();
     const result = addEntryToAlbum(state, entry);
-    if (!result.count) return;
-    update(result.state, `${result.count} figurita(s) registradas.`);
+    if (!result.added) {
+      if (!result.invalidTokens.length) return;
+      const message = 'No encontré ninguna figurita con ese código. Revisa si escribiste MEX1, FWC1, CC1 o el número correcto.';
+      update(result.state, message);
+      toast.error('Código no encontrado', { description: result.invalidTokens.join(', ') });
+      return;
+    }
+    const invalid = result.invalidTokens.length ? ` No encontré: ${result.invalidTokens.join(', ')}.` : '';
+    update(result.state, `Se agregaron ${result.added} figurita(s).${invalid}`);
     toast.success('Figuritas registradas', {
-      description: `${result.count} entrada(s) agregadas al album.`
+      description: `${result.added} entrada(s) agregadas al álbum.${invalid}`
     });
-    setEntry('');
+    if (!result.invalidTokens.length) setEntry('');
   }
 
   return (
@@ -31,12 +39,12 @@ export function Dashboard({ state, update, notice, albumStats, countryStats, cos
       <div className="entry-panel">
         <Card className="quick-entry">
           <CardHeader>
-            <CardTitle>Registro rapido</CardTitle>
+            <CardTitle>Registro rápido</CardTitle>
             <CardDescription>Captura una o varias figuritas sin salir del inicio.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={addEntry}>
-              <Label htmlFor="entry">Codigo o numero</Label>
+              <Label htmlFor="entry">Código o número</Label>
               <div className="entry-row">
                 <Input id="entry" value={entry} placeholder="Ej. MEX1, ARG10, 21, FWC1, CC1" onChange={(event) => setEntry(event.target.value)} />
                 <Button type="submit">
@@ -45,7 +53,8 @@ export function Dashboard({ state, update, notice, albumStats, countryStats, cos
                 </Button>
               </div>
             </form>
-            <p>{notice}</p>
+            <p className="quick-entry-help">Puedes escribir códigos separados por espacios, comas o saltos de línea.</p>
+            {visibleNotice && <p className="notice">{visibleNotice}</p>}
           </CardContent>
         </Card>
         <div className="stats-grid">
@@ -65,8 +74,8 @@ export function Dashboard({ state, update, notice, albumStats, countryStats, cos
       </div>
 
       <div className="split-grid dashboard-top-grid">
-        <Ranking title="Top 5 mas completos" teams={leaders} />
-        <Ranking title="Top 5 mas atrasados" teams={lagging} />
+        <Ranking title="Top 5 más completos" teams={leaders} />
+        <Ranking title="Top 5 más atrasados" teams={lagging} />
       </div>
     </section>
   );

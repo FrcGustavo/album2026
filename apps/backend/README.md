@@ -78,7 +78,9 @@ Los endpoints del album usan siempre el usuario autenticado:
 - `GET /api/me/album/export`
 - `POST /api/me/album/import`
 
-El estado se guarda en `album_states.state_json` para conservar una persistencia simple y versionable.
+El estado nuevo se guarda en tablas normalizadas por usuario y album. `album_states.state_json` se conserva como almacenamiento legacy/snapshot para migracion, exportacion compatible y rollback operativo.
+
+Usuarios con estado legacy pueden consultar `GET /api/me/album/migration-status` y migrar con `POST /api/me/album/migrate`. La API publica del album sigue aceptando y devolviendo el mismo JSON `AlbumState`.
 
 ## Arquitectura
 
@@ -95,7 +97,7 @@ python3 -m pytest
 
 ## Docker
 
-La imagen del backend ejecuta `alembic upgrade head` antes de iniciar Uvicorn.
+La imagen del backend ejecuta `alembic upgrade head` desde `docker-entrypoint.sh` antes de iniciar Uvicorn. Si necesitas desactivarlo en un caso especial, usa `ALBUM_RUN_MIGRATIONS=false`.
 
 ```bash
 docker build -t album-backend .

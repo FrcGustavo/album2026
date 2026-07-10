@@ -8,7 +8,8 @@ export function emptyState() {
     cocaColaEnabled: catalog.addons.cocaCola.enabledDefault,
     cocaCola: {},
     customCracks: [],
-    purchases: []
+    purchases: [],
+    activityLog: []
   };
 }
 
@@ -57,7 +58,20 @@ export function sanitizeState(value) {
           price: Number(purchase.price) || 0,
           packsPerBox: Number(purchase.packsPerBox) || 0,
           stickersPerPack: Number(purchase.stickersPerPack) || 7,
-          notes: purchase.notes || ''
+          notes: purchase.notes || '',
+          source: purchase.source || ''
+        }))
+    : [];
+  next.activityLog = Array.isArray(value.activityLog)
+    ? value.activityLog
+        .filter((entry) => entry?.message)
+        .slice(0, 50)
+        .map((entry) => ({
+          id: entry.id || crypto.randomUUID(),
+          type: String(entry.type || 'change'),
+          message: String(entry.message),
+          stickerCode: entry.stickerCode ? String(entry.stickerCode) : inferStickerCode(entry.message),
+          createdAt: normalizeActivityDate(entry.createdAt)
         }))
     : [];
 
@@ -238,4 +252,100 @@ export function getCostStats(state, albumStats) {
       }
     }
   );
+}
+
+export function appendActivity(state, type, message, details = {}) {
+  return {
+    ...state,
+    activityLog: [
+      {
+        id: crypto.randomUUID(),
+        type,
+        message,
+        stickerCode: details.stickerCode || null,
+        createdAt: normalizeActivityDate(details.createdAt)
+      },
+      ...(state.activityLog || [])
+    ].slice(0, 50)
+  };
+}
+
+export function appendActivities(state, entries) {
+  const createdAt = new Date().toISOString();
+  return {
+    ...state,
+    activityLog: [
+      ...entries.map((entry) => ({
+        id: crypto.randomUUID(),
+        type: entry.type || 'change',
+        message: entry.message,
+        stickerCode: entry.stickerCode || null,
+        createdAt
+      })),
+      ...(state.activityLog || [])
+    ].slice(0, 50)
+  };
+}
+
+export function getMissingStickers(state) {
+  return getActiveAlbumStickers(state).filter((sticker) => copiesFor(state, sticker) === 0);
+}
+
+export function getRepeatedStickers(state) {
+  return getActiveAlbumStickers(state)
+    .map((sticker) => ({ sticker, extraCopies: Math.max(0, copiesFor(state, sticker) - 1) }))
+    .filter((item) => item.extraCopies > 0);
+}
+
+export function formatStickerList(items) {
+  return items
+    .map((item) => {
+      if (item.sticker) return `${item.sticker.code} x${item.extraCopies}`;
+      return item.code;
+    })
+    .join(', ');
+}
+
+export function getMonthlyCostSummary(state) {
+  return summarizePurchases(state.purchases, (purchase) => String(purchase.date || '').slice(0, 7) || 'Sin fecha');
+}
+
+export function getCostSummaryByType(state) {
+  return summarizePurchases(state.purchases, (purchase) => purchase.type || 'unknown');
+}
+
+export function getImportPreview(value) {
+  const imported = sanitizeState(value?.state || value);
+  const stats = getAlbumStats(imported);
+  return {
+    state: imported,
+    owned: stats.owned,
+    repeated: stats.repeated,
+    cracks: imported.customCracks.length,
+    purchases: imported.purchases.length
+  };
+}
+
+function summarizePurchases(purchases, keyFor) {
+  return purchases.reduce((summary, purchase) => {
+    const key = keyFor(purchase);
+    const current = summary[key] || { key, spent: 0, income: 0, net: 0 };
+    const price = Number(purchase.price) || 0;
+    if (purchase.type === 'income') current.income += price;
+    else current.spent += price;
+    current.net = current.spent - current.income;
+    summary[key] = current;
+    return summary;
+  }, {});
+}
+
+function normalizeActivityDate(value) {
+  const parsed = value ? new Date(value) : null;
+  if (parsed && !Number.isNaN(parsed.getTime())) return parsed.toISOString();
+  return new Date().toISOString();
+}
+
+function inferStickerCode(message) {
+  const match = String(message || '').match(/\b(?:[A-Z]{2,3}\d{1,2}|FWC\d{1,2}|CC\d{1,2}|00)\b/);
+  return match?.[0] || null;
 }

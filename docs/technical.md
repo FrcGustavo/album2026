@@ -97,11 +97,17 @@ La API vive en `/api` y la documentacion Swagger en `/docs`.
 Flujo principal:
 
 1. `POST /api/auth/register` crea cuenta con `email`, `name` y `password`.
-2. `POST /api/auth/login` devuelve `access_token`.
-3. El frontend envia `Authorization: Bearer <token>`.
+2. `POST /api/auth/login` devuelve `access_token` y setea una cookie httpOnly configurable (`album_access_token` por default).
+3. El frontend envia cookies con `credentials: include`; `Authorization: Bearer <token>` queda como compatibilidad para clientes no basados en cookie.
 4. El album se lee y guarda con rutas `/api/me/album`.
 
-No hay guardado local del album: si el backend no esta disponible, la app muestra error y no persiste cambios en el navegador.
+No hay guardado local permanente del album: si el backend no esta disponible, la app muestra error y conserva cambios pendientes en el navegador solo como borrador temporal.
+
+## Persistencia normalizada y migracion
+
+La persistencia v2 separa el catalogo del album (`albums`, `teams`, `stickers`) del progreso por usuario (`user_album_states`, `user_sticker_copies`, `custom_cracks`, `purchases`, `activity_log`). El contrato publico sigue siendo el JSON `AlbumState`, reconstruido desde las tablas normalizadas.
+
+La tabla legacy `album_states` permanece como snapshot compatible. Cuando un usuario con estado legacy entra a la app, el backend marca `X-Album-Migration-Required: true`; el frontend muestra un modal obligatorio y llama `POST /api/me/album/migrate`. La migracion es idempotente, no borra el JSON legacy y mantiene estampas, repetidas, Coca-Cola, cracks personalizados, compras e historial.
 
 ## Arquitectura
 

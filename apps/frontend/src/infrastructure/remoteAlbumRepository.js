@@ -1,9 +1,11 @@
 import { sanitizeState } from '../domain/albumState.js';
 
-const DEFAULT_API_BASE_URL = 'http://127.0.0.1:8000/api';
+function defaultApiBaseUrl() {
+  return '/api';
+}
 
 export function createRemoteAlbumRepository({
-  baseUrl = import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL,
+  baseUrl = import.meta.env.VITE_API_BASE_URL || defaultApiBaseUrl(),
   getToken = () => null,
   onUnauthorized = () => {}
 } = {}) {
@@ -11,6 +13,7 @@ export function createRemoteAlbumRepository({
     const token = getToken();
     const response = await fetch(`${baseUrl}${path}`, {
       ...options,
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -21,10 +24,18 @@ export function createRemoteAlbumRepository({
     if (!response.ok) {
       const message = await response.text();
       const detail = parseErrorDetail(message);
-      throw new Error(detail || `HTTP ${response.status}`);
+      const error = new Error(detail || `HTTP ${response.status}`);
+      error.status = response.status;
+      throw error;
     }
     if (response.status === 204) return null;
-    return response.json();
+    const payload = await response.json();
+    return {
+      payload,
+      revision: response.headers?.get?.('X-Album-Revision') || response.headers?.get?.('ETag')?.replaceAll('"', '') || null,
+      updatedAt: response.headers?.get?.('X-Album-Updated-At') || null,
+      headers: response.headers
+    };
   }
 
   function parseErrorDetail(message) {
@@ -41,35 +52,61 @@ export function createRemoteAlbumRepository({
       return request('/auth/register', {
         method: 'POST',
         body: JSON.stringify({ email, name, password })
-      });
+      }).then((result) => result.payload);
     },
     login({ email, password }) {
       return request('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password })
-      });
+      }).then((result) => result.payload);
+    },
+    logout() {
+      return request('/auth/logout', { method: 'POST' });
     },
     getMe() {
-      return request('/auth/me');
+      return request('/auth/me').then((result) => result.payload);
     },
     async loadAlbum() {
-      return sanitizeState(await request('/me/album'));
+      const result = await request('/me/album');
+      return {
+        state: sanitizeState(result.payload),
+        revision: result.revision,
+        updatedAt: result.updatedAt,
+        storageVersion: responseHeader(result, 'X-Album-Storage-Version') || 'normalized',
+        migrationRequired: responseHeader(result, 'X-Album-Migration-Required') === 'true'
+      };
     },
-    async saveAlbum(state) {
-      return sanitizeState(
-        await request('/me/album', {
+    async saveAlbum(state, { revision } = {}) {
+      const result = await request('/me/album', {
           method: 'PUT',
+          headers: revision ? { 'If-Match': `"${revision}"` } : {},
           body: JSON.stringify(state)
-        })
-      );
+        });
+      return { state: sanitizeState(result.payload), revision: result.revision, updatedAt: result.updatedAt };
     },
     async importAlbum(state) {
-      return sanitizeState(
-        await request('/me/album/import', {
+      const result = await request('/me/album/import', {
           method: 'POST',
           body: JSON.stringify(state)
-        })
-      );
+        });
+      return sanitizeState(result.payload);
+    },
+    getMigrationStatus() {
+      return request('/me/album/migration-status').then((result) => result.payload);
+    },
+    async migrateAlbum() {
+      const result = await request('/me/album/migrate', { method: 'POST' });
+      return {
+        state: sanitizeState(result.payload),
+        revision: result.revision,
+        updatedAt: result.updatedAt,
+        storageVersion: responseHeader(result, 'X-Album-Storage-Version') || 'normalized',
+        migrationRequired: responseHeader(result, 'X-Album-Migration-Required') === 'true'
+      };
     }
   };
+}
+
+function responseHeader(result, name) {
+  return result.headers?.get?.(name) || result.headers?.get?.(name.toLowerCase()) || null;
 }

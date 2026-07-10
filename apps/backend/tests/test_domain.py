@@ -25,8 +25,8 @@ def test_catalog_includes_dr_congo():
 
 
 def test_catalog_includes_panama():
-    assert team_by_id["PAN"]["name"] == "Panama"
-    assert sticker_by_code["PAN1"]["title"] == "Escudo Panama"
+    assert team_by_id["PAN"]["name"] == "Panamá"
+    assert sticker_by_code["PAN1"]["title"] == "Escudo Panamá"
     assert len(catalog["stickers"]) == 980
 
 
@@ -109,3 +109,17 @@ def test_sanitize_rejects_unknown_codes():
     state = sanitize_state({"stickers": {"NOPE": 2, "MEX1": 1}, "version": 2})
 
     assert state["stickers"] == {"MEX1": 1}
+
+
+def test_sanitize_keeps_purchase_source_and_activity_log():
+    state = sanitize_state(
+        {
+            "purchases": [{"type": "pack", "price": 20, "source": "Oxxo"}],
+            "activityLog": [{"message": "Agregaste MEX1", "type": "stickers"}],
+        }
+    )
+
+    assert state["purchases"][0]["source"] == "Oxxo"
+    assert state["activityLog"][0]["message"] == "Agregaste MEX1"
+    assert state["activityLog"][0]["stickerCode"] == "MEX1"
+    assert state["activityLog"][0]["createdAt"]
