@@ -19,22 +19,12 @@ export function StickerTile({ sticker, state, patch }) {
     });
   }
 
-  function handleKeyDown(event) {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    event.preventDefault();
-    change(1);
-  }
-
   return (
     <article
       className={`sticker-tile ${className} ${crack ? 'crack-border' : ''}`}
       title={`${playerName || sticker.title} - ${copies} copia(s)`}
-      role="button"
-      aria-label={`Agregar copia de ${sticker.code}`}
-      tabIndex={0}
-      onClick={() => change(1)}
-      onContextMenu={(event) => event.preventDefault()}
-      onKeyDown={handleKeyDown}
+      role="group"
+      aria-label={`${sticker.code}: ${playerName || sticker.title}`}
     >
       <div className="sticker-tile-header">
         <strong>{sticker.code}</strong>
@@ -43,34 +33,24 @@ export function StickerTile({ sticker, state, patch }) {
       <div className="sticker-tile-footer">
         <span>{stateLabel}</span>
         <div className="sticker-controls">
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          aria-label={`Restar ${sticker.code}`}
-          onClick={(event) => {
-            event.stopPropagation();
-            change(-1);
-          }}
-          onContextMenu={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-          }}
-        >
-          <Minus aria-hidden="true" />
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          aria-label={`Sumar ${sticker.code}`}
-          onClick={(event) => {
-            event.stopPropagation();
-            change(1);
-          }}
-        >
-          <Plus aria-hidden="true" />
-        </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label={`Restar ${sticker.code}`}
+            onClick={() => change(-1)}
+          >
+            <Minus aria-hidden="true" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label={`Sumar ${sticker.code}`}
+            onClick={() => change(1)}
+          >
+            <Plus aria-hidden="true" />
+          </Button>
         </div>
       </div>
     </article>

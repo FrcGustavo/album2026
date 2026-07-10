@@ -263,7 +263,7 @@ export function App({ createAlbumRepository, tokenStorage }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <Dialog open={migrationRequired} onOpenChange={(open) => open && migrationRequired}>
+      <Dialog open={migrationRequired}>
         <DialogContent
           onEscapeKeyDown={(event) => event.preventDefault()}
           onPointerDownOutside={(event) => event.preventDefault()}
