@@ -7,6 +7,25 @@ import { Dashboard } from './Dashboard.jsx';
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 describe('Dashboard', () => {
+  it('ignores empty quick-entry submissions', () => {
+    const update = vi.fn();
+    render(
+      <Dashboard
+        state={emptyState()}
+        update={update}
+        notice="Listo."
+        albumStats={{ owned: 0, activeTotal: 980, missing: 980, repeated: 0, shieldsAndTeamPhotos: {}, completedTeams: {}, specials: {}, cracks: {}, cocaCola: {} }}
+        countryStats={[]}
+        costStats={{ net: 0 }}
+      />
+    );
+
+    fireEvent.change(screen.getByLabelText('Código o número'), { target: { value: ' , ; ' } });
+    fireEvent.click(screen.getByRole('button', { name: /agregar/i }));
+
+    expect(update).not.toHaveBeenCalled();
+  });
+
   it('reports invalid quick-entry codes', () => {
     const update = vi.fn();
     render(

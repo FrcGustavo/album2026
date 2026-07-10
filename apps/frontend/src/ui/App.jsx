@@ -47,10 +47,10 @@ const ALBUM_PATHS = new Set(ALBUM_ROUTE_TABS.map(([, path]) => path));
 
 const REPOSITORY_URL = 'https://github.com/FrcGustavo/album2026';
 
-export function App({ createAlbumRepository, tokenStorage }) {
+export function App({ createAlbumRepository }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const auth = useAuthSession({ createAlbumRepository, tokenStorage });
+  const auth = useAuthSession({ createAlbumRepository });
   const album = useRemoteAlbumState(auth);
   const { token, user, notice, setNotice, authenticate, remoteAlbumRepository } = auth;
   const { state, patch, update, syncStatus, conflict, migrationRequired, migrationBusy, migrationError, migrateAlbum, retrySave, reloadRemote, resetLocalState } = album;

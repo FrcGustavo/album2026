@@ -5,14 +5,8 @@ import { createRemoteAlbumRepository } from './infrastructure/remoteAlbumReposit
 import { App } from './ui/App.jsx';
 import './styles.css';
 
-const tokenStorage = {
-  getItem: (key) => localStorage.getItem(key),
-  setItem: (key, value) => localStorage.setItem(key, value),
-  removeItem: (key) => localStorage.removeItem(key)
-};
-
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
-    <App createAlbumRepository={createRemoteAlbumRepository} tokenStorage={tokenStorage} />
+    <App createAlbumRepository={createRemoteAlbumRepository} />
   </BrowserRouter>
 );

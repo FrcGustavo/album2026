@@ -20,6 +20,7 @@ export function Dashboard({ state, update, notice, albumStats, countryStats, cos
     event.preventDefault();
     const result = addEntryToAlbum(state, entry);
     if (!result.added) {
+      if (!result.invalidTokens.length) return;
       const message = 'No encontré ninguna figurita con ese código. Revisa si escribiste MEX1, FWC1, CC1 o el número correcto.';
       update(result.state, message);
       toast.error('Código no encontrado', { description: result.invalidTokens.join(', ') });
