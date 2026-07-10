@@ -70,11 +70,18 @@ export function Costs({ state, patch, costStats, albumStats }) {
   }
 
   function deletePurchase(purchase) {
+    const purchaseIndex = state.purchases.findIndex((item) => item.id === purchase.id);
     patch((current) => appendActivity({ ...current, purchases: current.purchases.filter((item) => item.id !== purchase.id) }, 'purchase', 'Eliminaste un movimiento.'), 'Movimiento eliminado.');
     toast('Movimiento eliminado.', {
       action: {
         label: 'Deshacer',
-        onClick: () => patch((current) => ({ ...current, purchases: [purchase, ...current.purchases] }), 'Movimiento restaurado.')
+        onClick: () =>
+          patch((current) => {
+            const nextPurchases = [...current.purchases];
+            const restoreIndex = purchaseIndex >= 0 ? Math.min(purchaseIndex, nextPurchases.length) : nextPurchases.length;
+            nextPurchases.splice(restoreIndex, 0, purchase);
+            return { ...current, purchases: nextPurchases };
+          }, 'Movimiento restaurado.')
       }
     });
   }

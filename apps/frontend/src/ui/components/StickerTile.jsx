@@ -12,7 +12,9 @@ export function StickerTile({ sticker, state, patch }) {
 
   function change(delta) {
     patch((current) => {
-      const nextCopies = Math.max(0, copiesFor(current, sticker) + delta);
+      const currentCopies = copiesFor(current, sticker);
+      const nextCopies = Math.max(0, currentCopies + delta);
+      if (nextCopies === currentCopies) return current;
       return appendActivity(setStickerCopies(current, sticker, nextCopies), 'stickers', `${delta > 0 ? 'Agregaste' : 'Restaste'} ${sticker.code}.`, { stickerCode: sticker.code });
     });
   }
