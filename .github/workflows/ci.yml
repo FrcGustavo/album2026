@@ -27,4 +27,4 @@ jobs:
         working-directory: apps/backend
       - run: python -m pytest
         working-directory: apps/backend
-      - run: docker compose build
+      - run: ALBUM_ENV=development docker compose build
