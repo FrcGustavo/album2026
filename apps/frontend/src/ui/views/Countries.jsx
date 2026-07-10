@@ -57,8 +57,8 @@ export function Countries({ countryStats }) {
             <h2>Grupo {group}</h2>
             <div className="country-grid countries-card-grid">
               {teams.map((team) => (
-                <button type="button" className="country-card-button" onClick={() => navigate(`/album?team=${team.code}`)}>
-                  <CountryCard key={team.id} team={team} />
+                <button key={team.id} type="button" className="country-card-button" onClick={() => navigate(`/album?team=${team.code}`)}>
+                  <CountryCard team={team} />
                 </button>
               ))}
             </div>

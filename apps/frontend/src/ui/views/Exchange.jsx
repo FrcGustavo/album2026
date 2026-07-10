@@ -128,9 +128,14 @@ function StickerExchangeList({ items, kind }) {
   );
 }
 
-function copyText(text) {
-  navigator.clipboard?.writeText(text);
-  toast.success('Texto copiado');
+async function copyText(text) {
+  try {
+    if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
+    await navigator.clipboard.writeText(text);
+    toast.success('Texto copiado');
+  } catch {
+    toast.error('No pude copiar el texto');
+  }
 }
 
 function downloadText(title, text) {

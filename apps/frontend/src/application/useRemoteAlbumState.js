@@ -149,21 +149,27 @@ export function useRemoteAlbumState({ token, user, setUser, setNotice, setAuthSt
 
   function reloadRemote() {
     setSyncStatus('loading');
-    remoteAlbumRepository.loadAlbum().then((remoteAlbum) => {
-      setState(remoteAlbum.state);
-      setRevision(remoteAlbum.revision);
-      setMigrationRequired(Boolean(remoteAlbum.migrationRequired));
-      setMigrationStatus({
-        required: Boolean(remoteAlbum.migrationRequired),
-        storageVersion: remoteAlbum.storageVersion || 'normalized',
-        legacyRevision: remoteAlbum.storageVersion === 'legacy' ? Number(remoteAlbum.revision) || null : null,
-        normalizedRevision: remoteAlbum.storageVersion === 'normalized' ? Number(remoteAlbum.revision) || null : null
+    remoteAlbumRepository
+      .loadAlbum()
+      .then((remoteAlbum) => {
+        setState(remoteAlbum.state);
+        setRevision(remoteAlbum.revision);
+        setMigrationRequired(Boolean(remoteAlbum.migrationRequired));
+        setMigrationStatus({
+          required: Boolean(remoteAlbum.migrationRequired),
+          storageVersion: remoteAlbum.storageVersion || 'normalized',
+          legacyRevision: remoteAlbum.storageVersion === 'legacy' ? Number(remoteAlbum.revision) || null : null,
+          normalizedRevision: remoteAlbum.storageVersion === 'normalized' ? Number(remoteAlbum.revision) || null : null
+        });
+        setConflict(null);
+        clearPendingState();
+        setSyncStatus('synced');
+        setNotice('Álbum remoto recargado.');
+      })
+      .catch((error) => {
+        setSyncStatus(error.status === 401 ? 'signed-out' : 'error');
+        setNotice(error.status === 401 ? 'Accede para continuar con tu álbum.' : 'No pude recargar el álbum remoto.');
       });
-      setConflict(null);
-      clearPendingState();
-      setSyncStatus('synced');
-      setNotice('Álbum remoto recargado.');
-    });
   }
 
   function resetLocalState() {

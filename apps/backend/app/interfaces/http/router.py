@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Cookie, Depends, Header, HTTPException, Response, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.application.security import TokenService
@@ -24,8 +24,8 @@ def token_service() -> TokenService:
 
 
 def current_user(
+    request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
-    album_access_token: Optional[str] = Cookie(default=None),
     service: UserService = Depends(get_user_service),
     tokens: TokenService = Depends(token_service),
 ) -> User:
@@ -34,7 +34,7 @@ def current_user(
         detail="Token invalido o expirado",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    raw_token = album_access_token or (credentials.credentials if credentials else None)
+    raw_token = request.cookies.get(get_settings().cookie_name) or (credentials.credentials if credentials else None)
     if not raw_token:
         raise credentials_error
     try:
